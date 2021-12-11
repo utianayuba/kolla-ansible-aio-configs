@@ -26,6 +26,7 @@ openstack role list
 openstack role add --project project-0 --user karno _member_
 openstack role add --project project-0 --user karno load-balancer_admin
 openstack role add --project project-0 --user karno heat_stack_owner
+openstack role add --project project-0 --user karno creator
 openstack role assignment list --names --user karno
 
 #7. Create and load user openrc

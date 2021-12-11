@@ -34,6 +34,7 @@ spec:
         ports:
           - containerPort: 8080
 EOF
+
 kubectl apply -f dep-webserver.yaml
 kubectl expose deployment webserver --type=NodePort --target-port=8080
 kubectl get svc
@@ -63,6 +64,7 @@ spec:
             port:
               number: 8080
 EOF
+
 kubectl apply -f ing-test-octavia-ingress.yaml
 kubectl get ing -w
 #Ctrl+C
