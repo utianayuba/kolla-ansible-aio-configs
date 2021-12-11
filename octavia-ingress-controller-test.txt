@@ -1,0 +1,70 @@
+#1. Verify service account and cluster role binding
+kubectl -n kube-system get ServiceAccount octavia-ingress-controller
+kubectl -n kube-system get ClusterRoleBinding octavia-ingress-controller
+
+#2. Verify octavia-ingress-controller configuration
+kubectl -n kube-system get ConfigMap octavia-ingress-controller-config
+
+#3. Verify octavia-ingress-controller deployment
+kubectl -n kube-system get StatefulSet octavia-ingress-controller
+
+#4. Create a backend service
+cat <<EOF > dep-webserver.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webserver
+  namespace: default
+  labels:
+    app: webserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webserver
+  template:
+    metadata:
+      labels:
+        app: webserver
+    spec:
+      containers:
+      - name: webserver
+        image: lingxiankong/alpine-test
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 8080
+EOF
+kubectl apply -f dep-webserver.yaml
+kubectl expose deployment webserver --type=NodePort --target-port=8080
+kubectl get svc
+source karno-openrc.sh
+openstack server list
+ssh -l core 10.14.14.1XX curl http://10.XXX.XXX.XXX:8080
+
+#5. Create an ingress resource
+cat <<EOF > ing-test-octavia-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: test-octavia-ingress
+  annotations:
+    kubernetes.io/ingress.class: "openstack"
+    octavia.ingress.kubernetes.io/internal: "false"
+spec:
+  rules:
+  - host: web.stratus.ok
+    http:
+      paths:
+      - path: /ping
+        pathType: Exact
+        backend:
+          service:
+            name: webserver
+            port:
+              number: 8080
+EOF
+kubectl apply -f ing-test-octavia-ingress.yaml
+kubectl get ing -w
+#Ctrl+C
+kubectl get ing
+curl -H "Host: web.stratus.ok" http://10.14.14.1XX/ping

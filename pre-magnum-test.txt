@@ -110,3 +110,16 @@ vim configure-kubernetes-minion.sh
 unalias cp
 for U in `find /var -name configure-kubernetes-master.sh | grep /var/lib/kolla`; do cp configure-kubernetes-master.sh $U; done
 for U in `find /var -name configure-kubernetes-minion.sh | grep /var/lib/kolla`; do cp configure-kubernetes-minion.sh $U; done
+
+#11. Modify Amphora provider on Octavia Ingress enable script
+cp `find /var -name enable-ingress-octavia.sh | grep /var/lib/kolla | head -1` .
+
+# https://github.com/kubernetes/cloud-provider-openstack/pull/614
+
+vim enable-ingress-octavia.sh
+.....
+      provider: amphora
+.....
+
+unalias cp
+for U in `find /var -name enable-ingress-octavia.sh | grep /var/lib/kolla`; do cp enable-ingress-octavia.sh $U; done
