@@ -85,3 +85,28 @@ systemctl status dnsmasq
 dig @10.11.11.11 external.stratus.ok
 dig @10.11.11.11 internal.stratus.ok
 dig @10.11.11.11 registry.stratus.ok
+
+#10. Modify Kubernetes master and minion configuration scripts
+cp `find /var -name configure-kubernetes-master.sh | grep /var/lib/kolla | head -1` .
+cp `find /var -name configure-kubernetes-minion.sh | grep /var/lib/kolla | head -1` .
+
+# https://review.opendev.org/c/openstack/magnum/+/800428
+
+vim configure-kubernetes-master.sh
+...
+#delete line at kubelet and kube-proxy sections
+                                          :ro \\
+    --volume /sys/fs/cgroup/systemd:/sys/fs/cgroup/systemd \\
+...
+
+
+vim configure-kubernetes-minion.sh
+...
+#delete line at kubelet and kube-proxy sections
+                                          :ro \\
+    --volume /sys/fs/cgroup/systemd:/sys/fs/cgroup/systemd \\
+...
+
+unalias cp
+for U in `find /var -name configure-kubernetes-master.sh | grep /var/lib/kolla`; do cp configure-kubernetes-master.sh $U; done
+for U in `find /var -name configure-kubernetes-minion.sh | grep /var/lib/kolla`; do cp configure-kubernetes-minion.sh $U; done
