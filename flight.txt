@@ -126,6 +126,12 @@ organizationalUnitName = Stratus
 
 #12. Generate self-sign certificates
 kolla-ansible -i all-in-one certificates
+
+openssl x509 -req -extfile <(printf "subjectAltName=DNS:external.stratus.ok") -days 1024 -in /etc/kolla/certificates/private/external/external.csr -CA /etc/kolla/certificates/private/root/root.crt -CAkey /etc/kolla/certificates/private/root/root.key -CAcreateserial -out /etc/kolla/certificates/private/external/external.crt
+openssl x509 -req -extfile <(printf "subjectAltName=DNS:internal.stratus.ok") -days 1024 -in /etc/kolla/certificates/private/internal/internal.csr -CA /etc/kolla/certificates/private/root/root.crt -CAkey /etc/kolla/certificates/private/root/root.key -CAcreateserial -out /etc/kolla/certificates/private/internal/internal.crt
+cat /etc/kolla/certificates/private/external/external.crt /etc/kolla/certificates/private/external/external.key > /etc/kolla/certificates/haproxy.pem
+cat /etc/kolla/certificates/private/internal/internal.crt /etc/kolla/certificates/private/internal/internal.key > /etc/kolla/certificates/haproxy-internal.pem
+
 openssl x509 -in /etc/kolla/certificates/ca/root.crt -text
 openssl x509 -in /etc/kolla/certificates/haproxy.pem -text
 openssl x509 -in /etc/kolla/certificates/haproxy-internal.pem -text
@@ -152,6 +158,9 @@ EOF
 cat <<EOF > /etc/kolla/config/magnum.conf
 [drivers]
 openstack_ca_file = /etc/pki/ca-trust/source/anchors/kolla-customca-root.crt
+
+[trust]
+cluster_user_trust = true
 EOF
 
 #17. Define NFS shares for Cinder backend

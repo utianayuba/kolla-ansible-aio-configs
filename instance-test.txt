@@ -48,7 +48,6 @@ EOF
 source karno-openrc.sh
 openstack project list
 
-
 #8. Create an internal network
 openstack network create net-int-0
 openstack network show net-int-0

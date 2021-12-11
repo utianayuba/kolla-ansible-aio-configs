@@ -53,3 +53,18 @@ vim /etc/hosts
 
 #8. Upgrade packages
 yum upgrade -y
+
+#9. Enable port forwarding
+echo "net.ipv4.ip_forward = 1" > /etc/sysctl.conf
+sysctl -p
+sysctl -a | grep "net.ipv4.ip_forward ="
+
+#10. Enable NAT
+cat <<EOF >> /etc/rc.d/rc.local
+iptables -t nat -F
+iptables -t nat -A POSTROUTING -s 10.0.0.0/8 -o enp7s0 -j MASQUERADE
+iptables -t nat -A POSTROUTING -s 172.16.0.0/12 -o enp7s0 -j MASQUERADE
+iptables -t nat -A POSTROUTING -s 192.168.0.0/16 -o enp7s0 -j MASQUERADE
+EOF
+chmod +x /etc/rc.d/rc.local
+/etc/rc.d/rc.local
