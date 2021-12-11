@@ -1,0 +1,87 @@
+#1. Create server key
+mkdir certs
+openssl genrsa -out certs/registry.stratus.ok.key
+
+#2. Create certificate signing request
+openssl req -new -key certs/registry.stratus.ok.key -out certs/registry.stratus.ok.csr -addext "subjectAltName = DNS:registry.stratus.ok"
+
+#3. Sign the CSR using Kolla root CA
+openssl x509 -req -extfile <(printf "subjectAltName=DNS:registry.stratus.ok") -days 365 -in certs/registry.stratus.ok.csr -CA /etc/kolla/certificates/private/root/root.crt -CAkey /etc/kolla/certificates/private/root/root.key -CAcreateserial -out certs/registry.stratus.ok.crt
+
+#4. Copy certs directory to /etc/docker
+cp -r certs /etc/docker
+
+#5. Run registry container
+docker run -d --restart=always --name registry -v /etc/docker/certs:/etc/docker/certs -e REGISTRY_HTTP_ADDR=0.0.0.0:4433 -e REGISTRY_HTTP_TLS_CERTIFICATE=/etc/docker/certs/registry.stratus.ok.crt -e REGISTRY_HTTP_TLS_KEY=/etc/docker/certs/registry.stratus.ok.key --network host registry:2
+
+#6. Copy Kolla root CA to docker client directory
+mkdir -p /etc/docker/certs.d/registry.stratus.ok\:4433/
+cp /etc/kolla/certificates/private/root/root.crt /etc/docker/certs.d/registry.stratus.ok\:4433/ca.crt
+
+#7. Create container image list file
+cat <<EOF > container_images.txt
+docker.io/openstackmagnum/heat-container-agent:wallaby-stable-1
+docker.io/openstackmagnum/cluster-autoscaler:v1.20.0
+docker.io/rancher/hyperkube:v1.20.12-rancher1
+docker.io/coredns/coredns:1.6.6
+docker.io/k8scloudprovider/k8s-keystone-auth:v1.20.0
+docker.io/k8scloudprovider/openstack-cloud-controller-manager:v1.20.2
+docker.io/k8scloudprovider/cinder-csi-plugin:v1.20.3
+docker.io/k8scloudprovider/magnum-auto-healer:v1.20.5
+docker.io/k8scloudprovider/octavia-ingress-controller:v1.20.2
+docker.io/grafana/grafana:5.1.5
+docker.io/prom/node-exporter:latest
+docker.io/prom/prometheus:latest
+docker.io/kubernetesui/dashboard:v2.0.0
+docker.io/kubernetesui/metrics-scraper:v1.0.4
+docker.io/planetlabs/draino:abf028a
+docker.io/squareup/ghostunnel:v1.5.2
+docker.io/jettech/kube-webhook-certgen:v1.0.0
+gcr.io/google_containers/pause:3.1
+gcr.io/google_containers/metrics-server-amd64:v0.3.5
+gcr.io/google_containers/cluster-proportional-autoscaler-amd64:1.1.2
+quay.io/coreos/etcd:v3.4.6
+quay.io/coreos/configmap-reload:v0.0.1
+quay.io/coreos/prometheus-operator:v0.37.0
+quay.io/coreos/prometheus-config-reloader:v0.37.0
+quay.io/calico/cni:v3.13.1
+quay.io/calico/pod2daemon-flexvol:v3.13.1
+quay.io/calico/kube-controllers:v3.13.1
+quay.io/calico/node:v3.13.1
+quay.io/prometheus/prometheus:v2.15.2
+quay.io/prometheus/alertmanager:v0.20.0
+quay.io/k8scsi/csi-attacher:v2.0.0
+quay.io/k8scsi/csi-attacher:v2.2.1
+quay.io/k8scsi/csi-provisioner:v1.4.0
+quay.io/k8scsi/csi-provisioner:v2.0.4
+quay.io/k8scsi/csi-snapshotter:v1.2.2
+quay.io/k8scsi/csi-snapshotter:v2.1.2
+quay.io/k8scsi/csi-resizer:v0.3.0
+quay.io/k8scsi/csi-resizer:v1.0.1
+quay.io/k8scsi/csi-node-driver-registrar:v1.1.0
+quay.io/k8scsi/csi-node-driver-registrar:v2.0.1
+EOF
+
+#8. Pull images and push images to registry
+while read U; do docker pull $U; done < container_images.txt
+while read U; do V=`echo $U | cut -f3 -d/`; docker tag $U registry.stratus.ok:4433/$V; done < container_images.txt
+while read U; do V=`echo $U | cut -f3 -d/`; docker push registry.stratus.ok:4433/$V; done < container_images.txt
+docker pull docker.io/traefik:v1.7.10
+docker tag docker.io/traefik:v1.7.10 registry.stratus.ok:4433/traefik:v1.7.10
+docker push registry.stratus.ok:4433/traefik:v1.7.10
+docker pull k8s.gcr.io/node-problem-detector:v0.6.2
+docker tag k8s.gcr.io/node-problem-detector:v0.6.2 registry.stratus.ok:4433/node-problem-detector:v0.6.2
+docker push registry.stratus.ok:4433/node-problem-detector:v0.6.2
+
+#9. Install and configure dnsmasq
+yum install -y dnsmasq bind-utils
+cat <<EOF > /etc/dnsmasq.d/stratus.ok.conf
+address=/external.stratus.ok/10.10.10.10
+address=/internal.stratus.ok/10.11.11.10
+address=/registry.stratus.ok/10.11.11.11
+EOF
+systemctl enable dnsmasq --now
+systemctl status dnsmasq
+dig @10.11.11.11 external.stratus.ok
+dig @10.11.11.11 internal.stratus.ok
+dig @10.11.11.11 registry.stratus.ok
