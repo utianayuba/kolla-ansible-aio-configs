@@ -116,6 +116,7 @@ for U in `find /var -name configure-kubernetes-minion.sh | grep /var/lib/kolla`;
 cp `find /var -name enable-ingress-octavia.sh | grep /var/lib/kolla | head -1` .
 
 # https://github.com/kubernetes/cloud-provider-openstack/pull/614
+# https://github.com/kubernetes/cloud-provider-openstack/issues/1250
 
 vim enable-ingress-octavia.sh
 .....
