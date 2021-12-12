@@ -116,6 +116,7 @@ for U in `find /var -name configure-kubernetes-minion.sh | grep /var/lib/kolla`;
 cp `find /var -name enable-ingress-octavia.sh | grep /var/lib/kolla | head -1` .
 
 # https://github.com/kubernetes/cloud-provider-openstack/pull/614
+# https://github.com/kubernetes/cloud-provider-openstack/issues/1250
 
 vim enable-ingress-octavia.sh
 .....
@@ -125,9 +126,9 @@ data:
     openstack:
       auth-url: ${AUTH_URL}
       domain-name: Default
-      username: karno
-      password: rahasia
-      project-id: 9e325a6a6076455fb0a4b0393f99bb89
+      username: ${USERNAME}
+      password: ${PASSWORD}
+      project-id: ${PROJECT_ID}
       region: ${REGION_NAME}
       ca-file: /etc/kubernetes/ca-bundle.crt
     octavia:

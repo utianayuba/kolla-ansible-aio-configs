@@ -13,7 +13,7 @@ openstack coe cluster template list
 openstack coe cluster create kubernetes-v1.20.12-rancher1 --cluster-template template-kubernetes-v1.20.12-rancher1 --keypair key-0 --master-count 1 --master-flavor flavor-4-4-40 --node-count 1 --flavor flavor-4-4-40 --master-lb-enabled
 openstack coe cluster list
 
-#3. Check cluster
+#4. Check cluster
 mkdir bin
 wget -c https://dl.k8s.io/release/v1.20.12/bin/linux/amd64/kubectl -O bin/
 chmod +x bin/kubectl 
@@ -21,4 +21,13 @@ mkdir -p ~/clusters/kubernetes-v1.20.12-rancher1
 rm -rf /root/clusters/kubernetes-v1.20.12-rancher1/config
 $(openstack coe cluster config kubernetes-v1.20.12-rancher1 --dir ~/clusters/kubernetes-v1.20.12-rancher1)
 export KUBECONFIG=/root/clusters/kubernetes-v1.20.12-rancher1/config 
+kubectl -n kube-system get po
+
+#5. Modify octavia-ingress-controller configmap
+kubectl -n kube-system edit configmap octavia-ingress-controller-config
+...
+      password: rahasia
+...
+
+kubectl -n kube-system rollout restart statefulset octavia-ingress-controller
 kubectl -n kube-system get po
