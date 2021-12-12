@@ -98,5 +98,7 @@ kubectl delete ing test-octavia-ingress
 kubectl apply -f test-octavia-ingress-tls.yaml
 kubectl get ing -w
 #Ctrl+C
-kubectl get ing
-curl -H "Host: web.stratus.ok" http://10.14.14.1XX/ping
+IP=10.14.14.1XX
+echo "$IP web.stratus.ok" > /etc/hosts
+curl https://web.stratus.ok
+curl https://web.stratus.ok/ping
