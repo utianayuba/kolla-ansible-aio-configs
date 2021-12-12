@@ -126,9 +126,9 @@ data:
     openstack:
       auth-url: ${AUTH_URL}
       domain-name: Default
-      username: karno
-      password: rahasia
-      project-id: 9e325a6a6076455fb0a4b0393f99bb89
+      username: ${USERNAME}
+      password: ${PASSWORD}
+      project-id: ${PROJECT_ID}
       region: ${REGION_NAME}
       ca-file: /etc/kubernetes/ca-bundle.crt
     octavia:
