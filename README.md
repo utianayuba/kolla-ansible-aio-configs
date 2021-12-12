@@ -7,8 +7,9 @@ OpenStack Services: Core Services, Barbican, Cinder, Magnum, Octavia
 
 Hardware requirements:
 - CPU 4 cores
-- RAM 12 GB
+- RAM 16 GB
 - HDD/SSD 128 GB (/ 20 GB, swap 8 GB, /var 100 GB)
+- OS: CentOS Stream 8
 - Internet connectivity
 
 Exec based on the following order:
@@ -18,3 +19,4 @@ Exec based on the following order:
 4. pre-magnum-test.txt
 5. magnum-test.txt
 6. octavia-ingress-controller-test.txt
+7. octavia-ingress-controller-tls-test.txt

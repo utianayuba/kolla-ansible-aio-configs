@@ -137,6 +137,9 @@ openssl x509 -in /etc/kolla/certificates/haproxy.pem -text
 openssl x509 -in /etc/kolla/certificates/haproxy-internal.pem -text
 openssl x509 -in /etc/kolla/certificates/backend-cert.pem -text
 
+cp /etc/kolla/certificates/ca/root.crt /etc/pki/ca-trust/source/anchors/stratus-root-ca.crt
+update-ca-trust
+
 #13. Generate certificates for octavia deployment
 kolla-ansible -i all-in-one octavia-certificates
 

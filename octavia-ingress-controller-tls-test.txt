@@ -1,0 +1,104 @@
+#1. Create server key
+mkdir certs
+openssl genrsa -out certs/web.stratus.ok.key
+
+#2. Create certificate signing request
+openssl req -new -key certs/web.stratus.ok.key -out certs/web.stratus.ok.csr -addext "subjectAltName = DNS:web.stratus.ok"
+
+#3. Sign the CSR using Kolla root CA
+openssl x509 -req -extfile <(printf "subjectAltName=DNS:web.stratus.ok") -days 365 -in certs/web.stratus.ok.csr -CA /etc/kolla/certificates/private/root/root.crt -CAkey /etc/kolla/certificates/private/root/root.key -CAcreateserial -out certs/web.stratus.ok.crt
+
+#4. Create secret using the certificates created.
+kubectl create secret tls tls-secret --cert certs/web.stratus.ok.crt --key certs/web.stratus.ok.key
+kubectl get secret tls-secret
+
+#5. Create a default backend service for the ingress
+cat <<EOF > default-http-backend.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: default-http-backend
+  labels:
+    app: default-http-backend
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: default-http-backend
+  template:
+    metadata:
+      labels:
+        app: default-http-backend
+    spec:
+      containers:
+      - name: default-http-backend
+        # Any image is permissible as long as:
+        # 1. It serves a 404 page at /
+        # 2. It serves 200 on a /healthz endpoint
+        image: k8s.gcr.io/defaultbackend-amd64:1.5
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: default-http-backend
+  namespace: default
+  labels:
+    app: default-http-backend
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: default-http-backend
+EOF
+
+kubectl apply -f default-http-backend.yaml
+kubectl get svc
+source karno-openrc.sh
+openstack server list
+ssh -l core 10.14.14.1XX curl http://10.XXX.XXX.XXX
+
+#6. Create a TLS Ingress
+
+cat <<EOF > test-octavia-ingress-tls.yaml
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: test-octavia-ingress-tls
+  annotations:
+    kubernetes.io/ingress.class: "openstack"
+    octavia.ingress.kubernetes.io/internal: "false"
+spec:
+  defaultBackend:
+    service:
+      name: default-http-backend
+      port:
+        number: 80
+  tls:
+    - secretName: tls-secret
+  rules:
+    - host: web.stratus.ok
+      http:
+        paths:
+        - path: /ping
+          pathType: Exact
+          backend:
+            service:
+              name: webserver
+              port:
+                number: 8080
+EOF
+
+kubectl delete ing test-octavia-ingress
+kubectl apply -f test-octavia-ingress-tls.yaml
+kubectl get ing -w
+#Ctrl+C
+IP=10.14.14.1XX
+echo "$IP web.stratus.ok" > /etc/hosts
+curl https://web.stratus.ok
+curl https://web.stratus.ok/ping

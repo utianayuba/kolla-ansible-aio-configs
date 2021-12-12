@@ -29,6 +29,7 @@ docker.io/k8scloudprovider/openstack-cloud-controller-manager:v1.20.2
 docker.io/k8scloudprovider/cinder-csi-plugin:v1.20.3
 docker.io/k8scloudprovider/magnum-auto-healer:v1.20.5
 docker.io/k8scloudprovider/octavia-ingress-controller:v1.20.2
+docker.io/k8scloudprovider/octavia-ingress-controller:latest
 docker.io/grafana/grafana:5.1.5
 docker.io/prom/node-exporter:latest
 docker.io/prom/prometheus:latest
@@ -66,9 +67,9 @@ EOF
 while read U; do docker pull $U; done < container_images.txt
 while read U; do V=`echo $U | cut -f3 -d/`; docker tag $U registry.stratus.ok:4433/$V; done < container_images.txt
 while read U; do V=`echo $U | cut -f3 -d/`; docker push registry.stratus.ok:4433/$V; done < container_images.txt
-docker pull docker.io/traefik:v1.7.10
-docker tag docker.io/traefik:v1.7.10 registry.stratus.ok:4433/traefik:v1.7.10
-docker push registry.stratus.ok:4433/traefik:v1.7.10
+docker pull docker.io/traefik:v1.7.28
+docker tag docker.io/traefik:v1.7.28 registry.stratus.ok:4433/traefik:v1.7.28
+docker push registry.stratus.ok:4433/traefik:v1.7.28
 docker pull k8s.gcr.io/node-problem-detector:v0.6.2
 docker tag k8s.gcr.io/node-problem-detector:v0.6.2 registry.stratus.ok:4433/node-problem-detector:v0.6.2
 docker push registry.stratus.ok:4433/node-problem-detector:v0.6.2
@@ -118,6 +119,20 @@ cp `find /var -name enable-ingress-octavia.sh | grep /var/lib/kolla | head -1` .
 
 vim enable-ingress-octavia.sh
 .....
+data:
+  config: |
+    cluster-name: ${CLUSTER_UUID}
+    openstack:
+      auth-url: ${AUTH_URL}
+      domain-name: Default
+      username: karno
+      password: rahasia
+      project-id: 9e325a6a6076455fb0a4b0393f99bb89
+      region: ${REGION_NAME}
+      ca-file: /etc/kubernetes/ca-bundle.crt
+    octavia:
+      subnet-id: ${CLUSTER_SUBNET}
+      floating-network-id: ${EXTERNAL_NETWORK_ID}
       provider: amphora
 .....
 
