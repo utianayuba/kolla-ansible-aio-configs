@@ -4,38 +4,41 @@
 #10.13.13.0/24 - tunnel_interface
 #10.14.14.0/24 - neutron_external_interface
 
+#0. Allows user to run all commands without password
+echo "karno ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/karno
+
 #1. Create dummy interfaces
-for U in {10..14}; do ip link add dummy${U} type dummy; ip link set dummy${U} up; done
-ip link set mtu 1558 dev dummy13
-for U in {10..13}; do ip add add 10.${U}.${U}.11/24 dev dummy${U}; done
+for U in {10..14}; do sudo ip link add dummy${U} type dummy; sudo ip link set dummy${U} up; done
+sudo ip link set mtu 1558 dev dummy13
+for U in {10..13}; do sudo ip add add 10.${U}.${U}.11/24 dev dummy${U}; done
 for U in {10..13}; do ip add show dev dummy${U}; done
 
 #2. Install NFS service
-yum install -y nfs-utils
-mkdir -p /var/nfs_shares/cinder
-mkdir -p /var/nfs_shares/cinder_backup
-cat <<EOF > /etc/exports
+sudo yum install -y nfs-utils
+sudo mkdir -p /var/nfs_shares/cinder
+sudo mkdir -p /var/nfs_shares/cinder_backup
+sudo tee /etc/exports <<EOF
 /var/nfs_shares/cinder 10.12.12.0/24(rw,sync,no_root_squash)
 /var/nfs_shares/cinder_backup 10.12.12.0/24(rw,sync,no_root_squash)
 EOF
-systemctl enable nfs-server --now
-systemctl status nfs-server
-exportfs
+sudo systemctl enable nfs-server --now
+sudo systemctl status nfs-server
+sudo exportfs
 showmount -e 10.12.12.11
 
 #3. Install OpenStack Xena and EPEL repo configs
-yum install -y centos-release-openstack-xena epel-release
+sudo yum install -y centos-release-openstack-xena epel-release
 
 #4. Install Package Installer for Python (PIP)
-yum install -y python39-pip
+sudo yum install -y python39-pip
 
 #5. Download and install Ansible
-pip3 install 'ansible<5.0'
+sudo pip3 install 'ansible<5.0'
 pip3 list --format=columns
 
 #6. Configure Ansible
-mkdir -p /etc/ansible
-cat <<EOF > /etc/ansible/ansible.cfg
+sudo mkdir -p /etc/ansible
+sudo tee /etc/ansible/ansible.cfg <<EOF
 [defaults]
 host_key_checking=False
 pipelining=True
@@ -43,8 +46,8 @@ forks=100
 EOF
 
 #7. Edit name resolver
-yum install -y vim
-vim /etc/hosts
+sudo yum install -y vim
+sudo vim /etc/hosts
 
 ...
 10.10.10.10 external.stratus.ok
@@ -52,19 +55,33 @@ vim /etc/hosts
 10.11.11.11 registry.stratus.ok
 
 #8. Upgrade packages
-yum upgrade -y
+sudo yum upgrade -y
 
 #9. Enable port forwarding
-echo "net.ipv4.ip_forward = 1" > /etc/sysctl.conf
-sysctl -p
-sysctl -a | grep "net.ipv4.ip_forward ="
+echo "net.ipv4.ip_forward = 1" | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+sudo sysctl -a | grep "net.ipv4.ip_forward ="
 
 #10. Enable NAT
-cat <<EOF >> /etc/rc.d/rc.local
+sudo tee -a /etc/rc.d/rc.local <<EOF
 iptables -t nat -F
 iptables -t nat -A POSTROUTING -s 10.0.0.0/8 -o enp7s0 -j MASQUERADE
 iptables -t nat -A POSTROUTING -s 172.16.0.0/12 -o enp7s0 -j MASQUERADE
 iptables -t nat -A POSTROUTING -s 192.168.0.0/16 -o enp7s0 -j MASQUERADE
 EOF
-chmod +x /etc/rc.d/rc.local
-/etc/rc.d/rc.local
+sudo chmod +x /etc/rc.d/rc.local
+sudo /etc/rc.d/rc.local
+
+#11. Enable nested virtualization
+sudo yum install -y qemu-kvm
+sudo tee -a /etc/modprobe.d/kvm.conf <<EOF
+# For Intel
+options kvm_intel nested=1
+#
+# For AMD
+options kvm_amd nested=1
+EOF
+sudo rmmod kvm_intel kvm_amd
+sudo modprobe kvm_intel kvm_amd
+cat /sys/module/kvm_intel/parameters/nested
+cat /sys/module/kvm_amd/parameters/nested

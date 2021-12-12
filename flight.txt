@@ -1,16 +1,17 @@
 #1. Download and install Kolla and Kolla Ansible
-yum install -y wget tar
+sudo yum install -y wget tar
 wget -c https://tarballs.opendev.org/openstack/kolla/kolla-stable-xena.tar.gz
 wget -c https://tarballs.opendev.org/openstack/kolla-ansible/kolla-ansible-stable-xena.tar.gz
 tar -xf kolla-stable-xena.tar.gz
 tar -xf kolla-ansible-stable-xena.tar.gz
 ls
-pip3 install ./kolla-13.0.1.dev4
-pip3 install ./kolla-ansible-13.0.1.dev12
+sudo pip3 install ./kolla-13.0.1.dev4
+sudo pip3 install ./kolla-ansible-13.0.1.dev12
 pip3 list --format=columns
 
 #2. Create the /etc/kolla directory
-mkdir -p /etc/kolla
+sudo mkdir -p /etc/kolla
+sudo chown karno:karno /etc/kolla
 
 #3. Copy the Kolla Ansible configuration files to /etc/kolla directory
 cp -r kolla-ansible-13.0.1.dev12/etc/kolla/* /etc/kolla
@@ -74,12 +75,10 @@ octavia_certs_country: ID
 octavia_certs_state: Jabar
 octavia_certs_organization: Stratus
 octavia_certs_organizational_unit: Octavia
-magnum_extra_volumes:
-  - "/etc/kolla/config/extras_volumes/magnum:/var/lib/kolla/extras_volumes/magnum"
 
 
 #8. Modify generate-root.yml task of certificates role
-vim /usr/local/share/kolla-ansible/ansible/roles/certificates/tasks/generate-root.yml
+sudo vim /usr/local/share/kolla-ansible/ansible/roles/certificates/tasks/generate-root.yml
 
 .....
     -subj "/CN=StratusCA/"
@@ -87,7 +86,7 @@ vim /usr/local/share/kolla-ansible/ansible/roles/certificates/tasks/generate-roo
 
 
 #9. Modify openssl-kolla.cnf jinja2 template of certificates role
-vim /usr/local/share/kolla-ansible/ansible/roles/certificates/templates/openssl-kolla.cnf.j2
+sudo vim /usr/local/share/kolla-ansible/ansible/roles/certificates/templates/openssl-kolla.cnf.j2
 
 .....
 [req_distinguished_name]
@@ -100,7 +99,7 @@ commonName = {{ kolla_external_fqdn }}
 
 
 #10. Modify openssl-kolla-internal.cnf jinja2 template of certificates role
-vim /usr/local/share/kolla-ansible/ansible/roles/certificates/templates/openssl-kolla-internal.cnf.j2
+sudo vim /usr/local/share/kolla-ansible/ansible/roles/certificates/templates/openssl-kolla-internal.cnf.j2
 
 .....
 [req_distinguished_name]
@@ -137,28 +136,28 @@ openssl x509 -in /etc/kolla/certificates/haproxy.pem -text
 openssl x509 -in /etc/kolla/certificates/haproxy-internal.pem -text
 openssl x509 -in /etc/kolla/certificates/backend-cert.pem -text
 
-cp /etc/kolla/certificates/ca/root.crt /etc/pki/ca-trust/source/anchors/stratus-root-ca.crt
-update-ca-trust
+sudo cp /etc/kolla/certificates/ca/root.crt /etc/pki/ca-trust/source/anchors/stratus-root-ca.crt
+sudo update-ca-trust
 
 #13. Generate certificates for octavia deployment
 kolla-ansible -i all-in-one octavia-certificates
 
 #14. Neutron custom configuration
-cat <<EOF > /etc/kolla/config/neutron.conf
+tee /etc/kolla/config/neutron.conf <<EOF
 [DEFAULT]
 global_physnet_mtu = 1558
 EOF
 
 #15. MTU configuration
 mkdir /etc/kolla/config/neutron
-cat <<EOF > /etc/kolla/config/neutron/ml2_conf.ini
+tee /etc/kolla/config/neutron/ml2_conf.ini <<EOF
 [ml2]
 path_mtu = 1558
 physical_network_mtus = physnet1:1500
 EOF
 
 #16. Magnum custom configuration
-cat <<EOF > /etc/kolla/config/magnum.conf
+tee /etc/kolla/config/magnum.conf <<EOF
 [drivers]
 openstack_ca_file = /etc/pki/ca-trust/source/anchors/kolla-customca-root.crt
 
@@ -167,31 +166,31 @@ cluster_user_trust = true
 EOF
 
 #17. Define NFS shares for Cinder backend
-cat <<EOF > /etc/kolla/config/nfs_shares
+tee /etc/kolla/config/nfs_shares <<EOF
 10.12.12.11:/var/nfs_shares/cinder
 EOF
 
 #18. Deploy the OpenStack
-yum install -y screen
+sudo yum install -y screen
 screen -R 0
 kolla-ansible -i all-in-one bootstrap-servers
 kolla-ansible -i all-in-one prechecks
 kolla-ansible -i all-in-one deploy
 #Ctrl+A,D
-ip add add 10.10.10.10/24 dev dummy10
-ip add add 10.11.11.10/24 dev dummy11
+sudo ip add add 10.10.10.10/24 dev dummy10
+sudo ip add add 10.11.11.10/24 dev dummy11
 screen -r 0
 kolla-ansible -i all-in-one post-deploy
 kolla-ansible -i all-in-one check
 #Ctrl+A,D
 
 #19. Activate br-ex interface
-ip link set br-ex up
-ip add add 10.14.14.11/24 dev br-ex
+sudo ip link set br-ex up
+sudo ip add add 10.14.14.11/24 dev br-ex
 ip add show dev br-ex
 
 #20. Install OpenStack client packages
-yum install -y python3-openstackclient python3-barbicanclient python3-heatclient python3-magnumclient python3-octaviaclient
+sudo yum install -y python3-openstackclient python3-barbicanclient python3-heatclient python3-magnumclient python3-octaviaclient
 
 #21. Verify OpenStack status
 cp /etc/kolla/admin-openrc.sh .
@@ -199,21 +198,25 @@ source admin-openrc.sh
 openstack endpoint list
 
 #22. Create Amphora Image
-yum install -y diskimage-builder debootstrap
+sudo yum install -y diskimage-builder debootstrap
 wget -c https://tarballs.opendev.org/openstack/octavia/octavia-stable-xena.tar.gz
 tar -xf octavia-stable-xena.tar.gz
+screen -r 0
 ls
-cd octavia-9.0.1.dev8/diskimage-create
+cd octavia-9.0.1.dev8/diskimage-create/
 ./diskimage-create.sh
 cd
+#Ctrl+A,D
 
 #23. Register Amphora Image to Glance
-cat /etc/kolla/octavia-openrc.sh > octavia-openrc.sh ; grep OS_CACERT /etc/kolla/admin-openrc.sh >> octavia-openrc.sh
+cp /etc/kolla/octavia-openrc.sh octavia-openrc.sh
+grep OS_CACERT /etc/kolla/admin-openrc.sh >> octavia-openrc.sh
 source octavia-openrc.sh
 openstack image create amphora-x64-haproxy --disk-format qcow2 --private --tag amphora --file octavia-9.0.1.dev8/diskimage-create/amphora-x64-haproxy.qcow2
 openstack image list
 
 #24. Configure Octavia health manager interface and bridge
+sudo usermod -aG docker karno
 source octavia-openrc.sh
 OCTAVIA_MGMT_PORT_IP=10.1.0.11
 
@@ -223,13 +226,13 @@ MGMT_PORT_ID=$(openstack port create --security-group lb-mgmt-sec-grp --device-o
 MGMT_PORT_MAC=$(openstack port show -c mac_address -f value $MGMT_PORT_ID)
 NETID=$(openstack network show lb-mgmt-net -c id -f value)
 
-docker exec openvswitch_vswitchd ovs-vsctl show
-docker exec openvswitch_vswitchd ovs-vsctl -- --may-exist add-port br-int o-hm0 -- set Interface o-hm0 type=internal -- set Interface o-hm0 external-ids:iface-status=active -- set Interface o-hm0 external-ids:attached-mac=$MGMT_PORT_MAC -- set Interface o-hm0 external-ids:iface-id=$MGMT_PORT_ID
-docker exec openvswitch_vswitchd ovs-vsctl show
+sudo docker exec openvswitch_vswitchd ovs-vsctl show
+sudo docker exec openvswitch_vswitchd ovs-vsctl -- --may-exist add-port br-int o-hm0 -- set Interface o-hm0 type=internal -- set Interface o-hm0 external-ids:iface-status=active -- set Interface o-hm0 external-ids:attached-mac=$MGMT_PORT_MAC -- set Interface o-hm0 external-ids:iface-id=$MGMT_PORT_ID
+sudo docker exec openvswitch_vswitchd ovs-vsctl show
 
-ip link set o-hm0 up
-ip link set dev o-hm0 address $MGMT_PORT_MAC
-ip add add dev o-hm0 ${OCTAVIA_MGMT_PORT_IP}/24
+sudo ip link set o-hm0 up
+sudo ip link set dev o-hm0 address $MGMT_PORT_MAC
+sudo ip add add dev o-hm0 ${OCTAVIA_MGMT_PORT_IP}/24
 ip add show dev o-hm0
 
 #25. Add rule to allow port 5555/UDP on lb-mgmt-sec-grp security group
@@ -251,4 +254,4 @@ kolla-ansible -i all-in-one reconfigure -t octavia
 source admin-openrc.sh
 openstack role list
 openstack role add --user admin --project admin load-balancer_admin
-openstack role assignment list --names
+openstack role assignment list --names --user admin
