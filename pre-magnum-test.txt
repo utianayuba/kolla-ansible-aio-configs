@@ -9,14 +9,14 @@ openssl req -new -key certs/registry.stratus.ok.key -out certs/registry.stratus.
 openssl x509 -req -extfile <(printf "subjectAltName=DNS:registry.stratus.ok") -days 365 -in certs/registry.stratus.ok.csr -CA /etc/kolla/certificates/private/root/root.crt -CAkey /etc/kolla/certificates/private/root/root.key -CAcreateserial -out certs/registry.stratus.ok.crt
 
 #4. Copy certs directory to /etc/docker
-cp -r certs /etc/docker
+sudo cp -r certs /etc/docker
 
 #5. Run registry container
 docker run -d --restart=always --name registry -v /etc/docker/certs:/etc/docker/certs -e REGISTRY_HTTP_ADDR=0.0.0.0:4433 -e REGISTRY_HTTP_TLS_CERTIFICATE=/etc/docker/certs/registry.stratus.ok.crt -e REGISTRY_HTTP_TLS_KEY=/etc/docker/certs/registry.stratus.ok.key --network host registry:2
 
 #6. Copy Kolla root CA to docker client directory
-mkdir -p /etc/docker/certs.d/registry.stratus.ok\:4433/
-cp /etc/kolla/certificates/private/root/root.crt /etc/docker/certs.d/registry.stratus.ok\:4433/ca.crt
+sudo mkdir -p /etc/docker/certs.d/registry.stratus.ok\:4433/
+sudo cp /etc/kolla/certificates/private/root/root.crt /etc/docker/certs.d/registry.stratus.ok\:4433/ca.crt
 
 #7. Create container image list file
 cat <<EOF > container_images.txt
@@ -64,6 +64,7 @@ quay.io/k8scsi/csi-node-driver-registrar:v2.0.1
 EOF
 
 #8. Pull images and push images to registry
+screen -r 0
 while read U; do docker pull $U; done < container_images.txt
 while read U; do V=`echo $U | cut -f3 -d/`; docker tag $U registry.stratus.ok:4433/$V; done < container_images.txt
 while read U; do V=`echo $U | cut -f3 -d/`; docker push registry.stratus.ok:4433/$V; done < container_images.txt
@@ -73,23 +74,26 @@ docker push registry.stratus.ok:4433/traefik:v1.7.28
 docker pull k8s.gcr.io/node-problem-detector:v0.6.2
 docker tag k8s.gcr.io/node-problem-detector:v0.6.2 registry.stratus.ok:4433/node-problem-detector:v0.6.2
 docker push registry.stratus.ok:4433/node-problem-detector:v0.6.2
+#Ctrl+A,D
 
 #9. Install and configure dnsmasq
-yum install -y dnsmasq bind-utils
-cat <<EOF > /etc/dnsmasq.d/stratus.ok.conf
+sudo yum install -y dnsmasq bind-utils
+sudo tee /etc/dnsmasq.d/stratus.ok.conf <<EOF
 address=/external.stratus.ok/10.10.10.10
 address=/internal.stratus.ok/10.11.11.10
 address=/registry.stratus.ok/10.11.11.11
 EOF
-systemctl enable dnsmasq --now
-systemctl status dnsmasq
+sudo systemctl enable dnsmasq --now
+sudo systemctl status dnsmasq
 dig @10.11.11.11 external.stratus.ok
 dig @10.11.11.11 internal.stratus.ok
 dig @10.11.11.11 registry.stratus.ok
 
 #10. Modify Kubernetes master and minion configuration scripts
-cp `find /var -name configure-kubernetes-master.sh | grep /var/lib/kolla | head -1` .
-cp `find /var -name configure-kubernetes-minion.sh | grep /var/lib/kolla | head -1` .
+sudo cp `sudo find /var -name configure-kubernetes-master.sh | grep /var/lib/kolla | head -1` .
+sudo chown karno:karno configure-kubernetes-master.sh
+sudo cp `sudo find /var -name configure-kubernetes-minion.sh | grep /var/lib/kolla | head -1` .
+sudo chown karno:karno configure-kubernetes-minion.sh
 
 # https://review.opendev.org/c/openstack/magnum/+/800428
 
@@ -109,11 +113,12 @@ vim configure-kubernetes-minion.sh
 ...
 
 unalias cp
-for U in `find /var -name configure-kubernetes-master.sh | grep /var/lib/kolla`; do cp configure-kubernetes-master.sh $U; done
-for U in `find /var -name configure-kubernetes-minion.sh | grep /var/lib/kolla`; do cp configure-kubernetes-minion.sh $U; done
+for U in `sudo find /var -name configure-kubernetes-master.sh | grep /var/lib/kolla`; do sudo cp configure-kubernetes-master.sh $U; done
+for U in `sudo find /var -name configure-kubernetes-minion.sh | grep /var/lib/kolla`; do sudo cp configure-kubernetes-minion.sh $U; done
 
 #11. Modify Amphora provider on Octavia Ingress enable script
-cp `find /var -name enable-ingress-octavia.sh | grep /var/lib/kolla | head -1` .
+sudo cp `sudo find /var -name enable-ingress-octavia.sh | grep /var/lib/kolla | head -1` .
+sudo chown karno:karno enable-ingress-octavia.sh
 
 # https://github.com/kubernetes/cloud-provider-openstack/pull/614
 # https://github.com/kubernetes/cloud-provider-openstack/issues/1250
@@ -138,4 +143,4 @@ data:
 .....
 
 unalias cp
-for U in `find /var -name enable-ingress-octavia.sh | grep /var/lib/kolla`; do cp enable-ingress-octavia.sh $U; done
+for U in `sudo find /var -name enable-ingress-octavia.sh | grep /var/lib/kolla`; do sudo cp enable-ingress-octavia.sh $U; done

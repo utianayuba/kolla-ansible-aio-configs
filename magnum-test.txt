@@ -15,12 +15,12 @@ openstack coe cluster list
 
 #4. Check cluster
 mkdir bin
-wget -c https://dl.k8s.io/release/v1.20.12/bin/linux/amd64/kubectl -O bin/
+wget -c https://dl.k8s.io/release/v1.20.12/bin/linux/amd64/kubectl -O bin/kubectl
 chmod +x bin/kubectl 
 mkdir -p ~/clusters/kubernetes-v1.20.12-rancher1
-rm -rf /root/clusters/kubernetes-v1.20.12-rancher1/config
+rm -rf ~/clusters/kubernetes-v1.20.12-rancher1/config
 $(openstack coe cluster config kubernetes-v1.20.12-rancher1 --dir ~/clusters/kubernetes-v1.20.12-rancher1)
-export KUBECONFIG=/root/clusters/kubernetes-v1.20.12-rancher1/config 
+export KUBECONFIG=~/clusters/kubernetes-v1.20.12-rancher1/config 
 kubectl -n kube-system get po
 
 #5. Modify octavia-ingress-controller configmap

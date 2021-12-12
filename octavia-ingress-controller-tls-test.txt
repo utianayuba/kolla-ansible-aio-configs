@@ -99,6 +99,6 @@ kubectl apply -f test-octavia-ingress-tls.yaml
 kubectl get ing -w
 #Ctrl+C
 IP=10.14.14.1XX
-echo "$IP web.stratus.ok" >> /etc/hosts
+echo "$IP web.stratus.ok" | sudo tee -a /etc/hosts
 curl https://web.stratus.ok
 curl https://web.stratus.ok/ping
