@@ -28,7 +28,7 @@ docker.io/k8scloudprovider/k8s-keystone-auth:v1.20.0
 docker.io/k8scloudprovider/openstack-cloud-controller-manager:v1.20.2
 docker.io/k8scloudprovider/cinder-csi-plugin:v1.20.3
 docker.io/k8scloudprovider/magnum-auto-healer:v1.20.5
-docker.io/k8scloudprovider/octavia-ingress-controller:latest
+docker.io/k8scloudprovider/octavia-ingress-controller:v1.20.2
 docker.io/grafana/grafana:5.1.5
 docker.io/prom/node-exporter:latest
 docker.io/prom/prometheus:latest
