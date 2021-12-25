@@ -68,5 +68,14 @@ EOF
 kubectl apply -f ing-test-octavia-ingress.yaml
 kubectl get ing -w
 #Ctrl+C
-kubectl get ing
+openstack loadbalancer list
 curl -H "Host: web.stratus.ok" http://10.14.14.1XX/ping
+
+#6. Delete resources
+kubectl delete ing test-octavia-ingress
+kubectl get ing
+openstack loadbalancer list
+kubectl delete svc webserver
+kubectl get svc
+kubectl delete deployment webserver
+kubectl get deployment

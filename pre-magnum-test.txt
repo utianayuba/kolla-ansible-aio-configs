@@ -28,7 +28,6 @@ docker.io/k8scloudprovider/k8s-keystone-auth:v1.20.0
 docker.io/k8scloudprovider/openstack-cloud-controller-manager:v1.20.2
 docker.io/k8scloudprovider/cinder-csi-plugin:v1.20.3
 docker.io/k8scloudprovider/magnum-auto-healer:v1.20.5
-docker.io/k8scloudprovider/octavia-ingress-controller:v1.20.2
 docker.io/k8scloudprovider/octavia-ingress-controller:latest
 docker.io/grafana/grafana:5.1.5
 docker.io/prom/node-exporter:latest
@@ -51,16 +50,12 @@ quay.io/calico/kube-controllers:v3.13.1
 quay.io/calico/node:v3.13.1
 quay.io/prometheus/prometheus:v2.15.2
 quay.io/prometheus/alertmanager:v0.20.0
-quay.io/k8scsi/csi-attacher:v2.0.0
-quay.io/k8scsi/csi-attacher:v2.2.1
-quay.io/k8scsi/csi-provisioner:v1.4.0
-quay.io/k8scsi/csi-provisioner:v2.0.4
-quay.io/k8scsi/csi-snapshotter:v1.2.2
-quay.io/k8scsi/csi-snapshotter:v2.1.2
-quay.io/k8scsi/csi-resizer:v0.3.0
-quay.io/k8scsi/csi-resizer:v1.0.1
-quay.io/k8scsi/csi-node-driver-registrar:v1.1.0
-quay.io/k8scsi/csi-node-driver-registrar:v2.0.1
+k8s.gcr.io/sig-storage/csi-attacher:v2.2.1
+k8s.gcr.io/sig-storage/csi-provisioner:v1.6.1
+k8s.gcr.io/sig-storage/csi-resizer:v0.5.1
+k8s.gcr.io/sig-storage/csi-snapshotter:v2.1.3
+k8s.gcr.io/sig-storage/csi-node-driver-registrar:v1.3.0
+k8s.gcr.io/sig-storage/livenessprobe:v2.1.0
 EOF
 
 #8. Pull images and push images to registry
@@ -124,7 +119,7 @@ sudo chown karno:karno enable-ingress-octavia.sh
 # https://github.com/kubernetes/cloud-provider-openstack/issues/1250
 
 vim enable-ingress-octavia.sh
-.....
+...
 data:
   config: |
     cluster-name: ${CLUSTER_UUID}
@@ -140,7 +135,7 @@ data:
       subnet-id: ${CLUSTER_SUBNET}
       floating-network-id: ${EXTERNAL_NETWORK_ID}
       provider: amphora
-.....
+...
 
 unalias cp
 for U in `sudo find /var -name enable-ingress-octavia.sh | grep /var/lib/kolla`; do sudo cp enable-ingress-octavia.sh $U; done

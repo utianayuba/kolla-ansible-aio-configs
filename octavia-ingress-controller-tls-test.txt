@@ -62,8 +62,40 @@ source karno-openrc.sh
 openstack server list
 ssh -l core 10.14.14.1XX curl http://10.XXX.XXX.XXX
 
-#6. Create a TLS Ingress
+#6. Create a backend service
+cat <<EOF > dep-webserver.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webserver
+  namespace: default
+  labels:
+    app: webserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webserver
+  template:
+    metadata:
+      labels:
+        app: webserver
+    spec:
+      containers:
+      - name: webserver
+        image: lingxiankong/alpine-test
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 8080
+EOF
 
+kubectl apply -f dep-webserver.yaml
+kubectl expose deployment webserver --type=NodePort --target-port=8080
+kubectl get svc
+openstack server list
+ssh -l core 10.14.14.1XX curl http://10.XXX.XXX.XXX:8080
+
+#7. Create a TLS Ingress
 cat <<EOF > test-octavia-ingress-tls.yaml
 ---
 apiVersion: networking.k8s.io/v1
@@ -94,11 +126,30 @@ spec:
                 number: 8080
 EOF
 
-kubectl delete ing test-octavia-ingress
 kubectl apply -f test-octavia-ingress-tls.yaml
 kubectl get ing -w
 #Ctrl+C
+openstack secret list
+openstack loadbalancer list
 IP=10.14.14.1XX
 echo "$IP web.stratus.ok" | sudo tee -a /etc/hosts
 curl https://web.stratus.ok
 curl https://web.stratus.ok/ping
+
+#8. Delete resources
+
+#https://github.com/kubernetes/cloud-provider-openstack/issues/1721
+
+kubectl delete ing test-octavia-ingress-tls
+kubectl get ing
+openstack loadbalancer list
+kubectl delete svc webserver
+kubectl get svc
+kubectl delete deployment webserver
+kubectl get deployment
+kubectl delete svc default-http-backend
+kubectl get svc
+kubectl delete deployment default-http-backend
+kubectl get deployment
+kubectl delete secret tls-secret
+kubectl get secret

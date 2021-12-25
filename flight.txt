@@ -5,8 +5,8 @@ wget -c https://tarballs.opendev.org/openstack/kolla-ansible/kolla-ansible-stabl
 tar -xf kolla-stable-xena.tar.gz
 tar -xf kolla-ansible-stable-xena.tar.gz
 ls
-sudo pip3 install ./kolla-13.0.1.dev4
-sudo pip3 install ./kolla-ansible-13.0.1.dev12
+sudo pip3 install ./kolla-13.0.1.dev5
+sudo pip3 install ./kolla-ansible-13.0.1.dev24
 pip3 list --format=columns
 
 #2. Create the /etc/kolla directory
@@ -14,10 +14,10 @@ sudo mkdir -p /etc/kolla
 sudo chown karno:karno /etc/kolla
 
 #3. Copy the Kolla Ansible configuration files to /etc/kolla directory
-cp -r kolla-ansible-13.0.1.dev12/etc/kolla/* /etc/kolla
+cp -r kolla-ansible-13.0.1.dev24/etc/kolla/* /etc/kolla
 
 #4. Copy the all-in-one inventory files to the current directory
-cp kolla-ansible-13.0.1.dev12/ansible/inventory/all-in-one .
+cp kolla-ansible-13.0.1.dev24/ansible/inventory/all-in-one .
 
 #5. Check whether the configuration of inventory is correct or not
 ansible -i all-in-one all -m ping
