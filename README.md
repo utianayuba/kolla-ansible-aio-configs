@@ -20,3 +20,4 @@ Exec based on the following order:
 5. magnum-test.txt
 6. octavia-ingress-controller-test.txt
 7. octavia-ingress-controller-tls-test.txt
+8. cinder-csi-test.txt
