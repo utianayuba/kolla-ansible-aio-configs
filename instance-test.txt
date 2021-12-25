@@ -1,0 +1,98 @@
+#1. Load admin openrc
+source admin-openrc.sh
+
+#2. Create the external network
+openstack network create --share --external --default --provider-network-type flat --provider-physical-network physnet1 net-ext
+openstack network show net-ext
+
+#3. Create the subnet for external network
+openstack subnet create --subnet-range 10.14.14.0/24 --no-dhcp --gateway 10.14.14.11 --network net-ext --allocation-pool start=10.14.14.100,end=10.14.14.199 subnet-ext
+openstack subnet show subnet-ext
+
+#4. Create a flavor
+openstack flavor create --ram 2048 --disk 20 --vcpus 2 flavor-2-2-20
+openstack flavor create --ram 4096 --disk 40 --vcpus 4 flavor-4-4-40
+openstack flavor create --ram 8192 --disk 80 --vcpus 8 flavor-8-8-80
+openstack flavor list
+
+#5. Create project
+openstack project create project-0
+openstack project show project-0
+
+#6. Create user with creator role to the project
+openstack user create --project project-0 --password rahasia karno
+openstack user show karno
+openstack role list
+openstack role add --project project-0 --user karno _member_
+openstack role add --project project-0 --user karno member
+openstack role add --project project-0 --user karno load-balancer_admin
+openstack role add --project project-0 --user karno heat_stack_owner
+openstack role add --project project-0 --user karno reader
+openstack role add --project project-0 --user karno creator
+openstack role assignment list --names --user karno
+
+#7. Create and load user openrc
+cat <<EOF > karno-openrc.sh
+export OS_PROJECT_DOMAIN_NAME=Default
+export OS_USER_DOMAIN_NAME=Default
+export OS_PROJECT_NAME=project-0
+export OS_TENANT_NAME=project-0
+export OS_USERNAME=karno
+export OS_PASSWORD=rahasia
+export OS_AUTH_URL=https://internal.stratus.ok:5000/v3
+export OS_INTERFACE=public
+export OS_ENDPOINT_TYPE=publicURL
+export OS_IDENTITY_API_VERSION=3
+export OS_REGION_NAME=RegionOne
+export OS_AUTH_PLUGIN=password
+export OS_CACERT=/etc/kolla/certificates/ca/root.crt
+EOF
+
+source karno-openrc.sh
+openstack project list
+
+#8. Create an internal network
+openstack network create net-int-0
+openstack network show net-int-0
+
+#9. Create a subnet for internal network
+openstack subnet create --subnet-range 192.168.0.0/24 --gateway 192.168.0.1 --network net-int-0 --allocation-pool start=192.168.0.100,end=192.168.0.199 subnet-int-0
+openstack subnet show subnet-int-0
+
+#10. Create a router
+openstack router create router-0
+openstack router set --external-gateway net-ext router-0
+openstack router add subnet router-0 subnet-int-0
+openstack router show router-0
+
+#11. Create a security group and rule to allow SSH and ICMP
+openstack security group create sg-0
+openstack security group rule create --dst-port 22 --protocol tcp sg-0
+openstack security group rule create --protocol icmp sg-0
+openstack security group show sg-0
+
+#12. Create a key pair
+ssh-keygen -t rsa -f ~/.ssh/id_rsa -P ""
+openstack keypair create --public-key ~/.ssh/id_rsa.pub --type ssh key-0
+openstack keypair show key-0
+
+#13. Download CentOS Stream 8 cloud image and upload to OpenStack glance image service
+wget -c https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-20210603.0.x86_64.qcow2
+openstack image create --disk-format qcow2 --file CentOS-Stream-GenericCloud-8-20210603.0.x86_64.qcow2 --progress CentOS-Stream-GenericCloud-8-20210603.0.x86_64
+openstack image show CentOS-Stream-GenericCloud-8-20210603.0.x86_64
+
+#14. Create an instance
+openstack server create --flavor flavor-2-2-20 --image CentOS-Stream-GenericCloud-8-20210603.0.x86_64 --network net-int-0 --security-group sg-0 --key-name key-0 instance-0
+openstack server list
+openstack console log show instance-0
+
+#15. Create a floating IP and attach it to the instance
+openstack floating ip create net-ext
+openstack floating ip list
+openstack server add floating ip instance-0 10.14.14.1XX
+openstack floating ip list
+openstack server list
+
+#16. Test SSH access to instance
+ping -c 3 10.14.14.1XX
+ssh -l centos 10.14.14.1XX hostname
