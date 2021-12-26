@@ -66,6 +66,7 @@ enable_neutron_trunk: "yes"
 enable_neutron_port_forwarding: "yes"
 enable_octavia: "yes"
 enable_prometheus: "no"
+enable_trove: "yes"
 glance_backend_file: "yes"
 cinder_backup_driver: "nfs"
 cinder_backup_share: "10.12.12.11:/var/nfs_shares/cinder_backup"
@@ -190,7 +191,7 @@ sudo ip add add 10.14.14.11/24 dev br-ex
 ip add show dev br-ex
 
 #20. Install OpenStack client packages
-sudo yum install -y python3-openstackclient python3-barbicanclient python3-heatclient python3-magnumclient python3-octaviaclient
+sudo yum install -y python3-openstackclient python3-barbicanclient python3-heatclient python3-magnumclient python3-octaviaclient python3-troveclient
 
 #21. Verify OpenStack status
 cp /etc/kolla/admin-openrc.sh .

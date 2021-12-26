@@ -2,6 +2,7 @@
 
 Deploy All-In-One node OpenStack using Kolla-Ansible for following use cases:
 - Containers workload provisioning
+- Database as a Service
 
 OpenStack Services: Core Services, Barbican, Cinder, Magnum, Octavia
 
@@ -21,3 +22,4 @@ Exec based on the following order:
 6. octavia-ingress-controller-test.txt
 7. octavia-ingress-controller-tls-test.txt
 8. cinder-csi-test.txt
+9. trove-test.txt

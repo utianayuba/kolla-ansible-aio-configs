@@ -10,7 +10,7 @@ openstack coe cluster template create template-kubernetes-v1.20.12-rancher1 --co
 openstack coe cluster template list
 
 #3. Create a cluster
-openstack coe cluster create kubernetes-v1.20.12-rancher1 --cluster-template template-kubernetes-v1.20.12-rancher1 --keypair key-0 --master-count 1 --master-flavor flavor-4-4-40 --node-count 1 --flavor flavor-4-4-40 --master-lb-enabled
+openstack coe cluster create kubernetes-v1.20.12-rancher1 --cluster-template template-kubernetes-v1.20.12-rancher1 --keypair key-0 --master-count 1 --master-flavor flavor-4-4-40 --node-count 1 --flavor flavor-4-4-40
 openstack coe cluster list
 
 #4. Check cluster
