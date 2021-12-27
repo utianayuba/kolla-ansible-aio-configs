@@ -3,6 +3,7 @@
 Deploy All-In-One node OpenStack using Kolla-Ansible for following use cases:
 - Containers workload provisioning
 - Database as a Service
+- Web application
 
 OpenStack Services: Core Services, Barbican, Cinder, Magnum, Octavia, Swift, Trove
 
