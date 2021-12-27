@@ -1,5 +1,5 @@
 #1. Download and install Kolla and Kolla Ansible
-sudo yum install -y wget tar
+sudo yum install -y wget tar vim python3-wheel
 wget -c https://tarballs.opendev.org/openstack/kolla/kolla-stable-wallaby.tar.gz
 wget -c https://tarballs.opendev.org/openstack/kolla-ansible/kolla-ansible-stable-wallaby.tar.gz
 tar -xf kolla-stable-wallaby.tar.gz
@@ -66,16 +66,21 @@ enable_neutron_trunk: "yes"
 enable_neutron_port_forwarding: "yes"
 enable_octavia: "yes"
 enable_prometheus: "no"
+enable_swift : "yes"
+enable_swift_s3api: "yes"
 enable_trove: "yes"
-glance_backend_file: "yes"
 cinder_backup_driver: "nfs"
 cinder_backup_share: "10.12.12.11:/var/nfs_shares/cinder_backup"
+glance_backend_swift: "yes"
 neutron_ovn_distributed_fip: "yes"
 neutron_ovn_dhcp_agent: "yes"
 octavia_certs_country: ID
 octavia_certs_state: Jabar
 octavia_certs_organization: Stratus
 octavia_certs_organizational_unit: Octavia
+swift_devices_match_mode: "strict"
+swift_devices_name: "SWIFT_DATA"
+swift_enable_rolling_upgrade: "yes"
 
 
 #8. Modify generate-root.yml task of certificates role
@@ -191,7 +196,7 @@ sudo ip add add 10.14.14.11/24 dev br-ex
 ip add show dev br-ex
 
 #20. Install OpenStack client packages
-sudo yum install -y python3-openstackclient python3-barbicanclient python3-heatclient python3-magnumclient python3-octaviaclient python3-troveclient python3-muranoclient
+sudo yum install -y python3-openstackclient python3-barbicanclient python3-heatclient python3-magnumclient python3-octaviaclient python3-troveclient python3-muranoclient python3-swiftclient
 
 #21. Verify OpenStack status
 cp /etc/kolla/admin-openrc.sh .
@@ -217,7 +222,6 @@ openstack image create amphora-x64-haproxy --disk-format qcow2 --private --tag a
 openstack image list
 
 #24. Configure Octavia health manager interface and bridge
-sudo usermod -aG docker karno
 source octavia-openrc.sh
 OCTAVIA_MGMT_PORT_IP=10.1.0.11
 

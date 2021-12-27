@@ -98,12 +98,6 @@ vim configure-kubernetes-master.sh
                                           :ro \\
     --volume /sys/fs/cgroup/systemd:/sys/fs/cgroup/systemd \\
 ...
-KUBE_API_ARGS="${KUBE_API_ARGS} \
-    --proxy-client-cert-file=${CERT_DIR}/server.crt \
-    --proxy-client-key-file=${CERT_DIR}/server.key \
-    --requestheader-allowed-names=front-proxy,kube,kubernetes \
-    --requestheader-client-ca-file=${CERT_DIR}/ca.crt \
-...
 
 
 vim configure-kubernetes-minion.sh
@@ -114,7 +108,6 @@ vim configure-kubernetes-minion.sh
 ...
 
 
-unalias cp
 for U in `sudo find /var -name configure-kubernetes-master.sh | grep /var/lib/kolla`; do sudo cp -v configure-kubernetes-master.sh $U; done
 for U in `sudo find /var -name configure-kubernetes-minion.sh | grep /var/lib/kolla`; do sudo cp -v configure-kubernetes-minion.sh $U; done
 
@@ -145,5 +138,4 @@ data:
 ...
 
 
-unalias cp
 for U in `sudo find /var -name enable-ingress-octavia.sh | grep /var/lib/kolla`; do sudo cp -v enable-ingress-octavia.sh $U; done

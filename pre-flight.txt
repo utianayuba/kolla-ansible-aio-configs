@@ -28,9 +28,10 @@ showmount -e 10.12.12.11
 
 #3. Install OpenStack Wallaby and EPEL repo configs
 sudo yum install -y centos-release-openstack-wallaby epel-release
+sudo yum erase -y epel-next-release
 
 #4. Install Package Installer for Python (PIP)
-sudo yum install -y python39-pip
+sudo yum install -y python3-pip python3-cryptography
 
 #5. Download and install Ansible
 sudo pip3 install 'ansible<3.0'
@@ -46,14 +47,11 @@ forks=100
 EOF
 
 #7. Edit name resolver
-sudo yum install -y vim
-sudo vim /etc/hosts
-
-...
+sudo tee -a /etc/hosts <<EOF
 10.10.10.10 external.stratus.ok
 10.11.11.10 internal.stratus.ok
 10.11.11.11 registry.stratus.ok
-
+EOF
 
 #8. Upgrade packages
 sudo yum upgrade -y
@@ -65,11 +63,12 @@ sudo sysctl -a | grep "net.ipv4.ip_forward ="
 
 #10. Enable NAT
 sudo ip route
+DEFINT=enp4s0
 sudo tee -a /etc/rc.d/rc.local <<EOF
 iptables -t nat -F
-iptables -t nat -A POSTROUTING -s 10.0.0.0/8 -o enp7s0 -j MASQUERADE
-iptables -t nat -A POSTROUTING -s 172.16.0.0/12 -o enp7s0 -j MASQUERADE
-iptables -t nat -A POSTROUTING -s 192.168.0.0/16 -o enp7s0 -j MASQUERADE
+iptables -t nat -A POSTROUTING -s 10.0.0.0/8 -o $DEFINT -j MASQUERADE
+iptables -t nat -A POSTROUTING -s 172.16.0.0/12 -o $DEFINT -j MASQUERADE
+iptables -t nat -A POSTROUTING -s 192.168.0.0/16 -o $DEFINT -j MASQUERADE
 EOF
 sudo chmod +x /etc/rc.d/rc.local
 sudo /etc/rc.d/rc.local
@@ -87,3 +86,77 @@ sudo rmmod kvm_intel kvm_amd
 sudo modprobe kvm_intel kvm_amd
 cat /sys/module/kvm_intel/parameters/nested
 cat /sys/module/kvm_amd/parameters/nested
+
+#12. Prepare Swift disks by add a special partition name and filesystem labels
+index=0
+for p in {4..6}; do
+    sudo parted -s /dev/sda name $p SWIFT_DATA
+    sudo mkfs.xfs -f -L part${index} /dev/sda${p}
+    (( index++ ))
+done
+
+#13. Prepare for Swift rings generating
+sudo usermod -aG docker karno
+KOLLA_SWIFT_BASE_IMAGE="kolla/centos-source-swift-base:wallaby"
+NODE=10.12.12.11
+
+#14. Generate Swift object ring
+docker run \
+  --rm \
+  -v /etc/kolla/config/swift/:/etc/kolla/config/swift/ \
+  $KOLLA_SWIFT_BASE_IMAGE \
+  swift-ring-builder \
+    /etc/kolla/config/swift/object.builder create 10 3 1
+
+    for i in {0..2}; do
+      docker run \
+        --rm \
+        -v /etc/kolla/config/swift/:/etc/kolla/config/swift/ \
+        $KOLLA_SWIFT_BASE_IMAGE \
+        swift-ring-builder \
+          /etc/kolla/config/swift/object.builder add r1z1-${NODE}:6000/part${i} 1;
+    done
+
+#15. Generate Swift account ring
+docker run \
+  --rm \
+  -v /etc/kolla/config/swift/:/etc/kolla/config/swift/ \
+  $KOLLA_SWIFT_BASE_IMAGE \
+  swift-ring-builder \
+    /etc/kolla/config/swift/account.builder create 10 3 1
+
+    for i in {0..2}; do
+      docker run \
+        --rm \
+        -v /etc/kolla/config/swift/:/etc/kolla/config/swift/ \
+        $KOLLA_SWIFT_BASE_IMAGE \
+        swift-ring-builder \
+          /etc/kolla/config/swift/account.builder add r1z1-${NODE}:6001/part${i} 1;
+    done
+
+#16. Generate Swift container ring
+docker run \
+  --rm \
+  -v /etc/kolla/config/swift/:/etc/kolla/config/swift/ \
+  $KOLLA_SWIFT_BASE_IMAGE \
+  swift-ring-builder \
+    /etc/kolla/config/swift/container.builder create 10 3 1
+
+    for i in {0..2}; do
+      docker run \
+        --rm \
+        -v /etc/kolla/config/swift/:/etc/kolla/config/swift/ \
+        $KOLLA_SWIFT_BASE_IMAGE \
+        swift-ring-builder \
+          /etc/kolla/config/swift/container.builder add r1z1-${NODE}:6002/part${i} 1;
+    done
+
+#17. Rebalance the ring files
+for ring in object account container; do
+  docker run \
+    --rm \
+    -v /etc/kolla/config/swift/:/etc/kolla/config/swift/ \
+    $KOLLA_SWIFT_BASE_IMAGE \
+    swift-ring-builder \
+      /etc/kolla/config/swift/${ring}.builder rebalance;
+done

@@ -4,12 +4,12 @@ Deploy All-In-One node OpenStack using Kolla-Ansible for following use cases:
 - Containers workload provisioning
 - Database as a Service
 
-OpenStack Services: Core Services, Barbican, Cinder, Magnum, Octavia, Trove
+OpenStack Services: Core Services, Barbican, Cinder, Magnum, Octavia, Swift, Trove
 
 Hardware requirements:
 - CPU 4 cores
 - RAM 16 GB
-- HDD/SSD 128 GB (/ 20 GB, swap 8 GB, /var 100 GB)
+- HDD/SSD 256 GB (/ 28 GB, swap 8 GB, /var 100 GB, part0 40 GB, part1 40 GB, part2 40 GB)
 - OS: CentOS Stream 8
 - Internet connectivity
 
