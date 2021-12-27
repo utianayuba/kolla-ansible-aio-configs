@@ -191,7 +191,7 @@ sudo ip add add 10.14.14.11/24 dev br-ex
 ip add show dev br-ex
 
 #20. Install OpenStack client packages
-sudo yum install -y python3-openstackclient python3-barbicanclient python3-heatclient python3-magnumclient python3-octaviaclient python3-troveclient
+sudo yum install -y python3-openstackclient python3-barbicanclient python3-heatclient python3-magnumclient python3-octaviaclient python3-troveclient python3-muranoclient
 
 #21. Verify OpenStack status
 cp /etc/kolla/admin-openrc.sh .

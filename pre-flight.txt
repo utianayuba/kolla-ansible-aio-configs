@@ -26,8 +26,8 @@ sudo systemctl status nfs-server
 sudo exportfs
 showmount -e 10.12.12.11
 
-#3. Install OpenStack Xena and EPEL repo configs
-sudo yum install -y centos-release-openstack-xena epel-release
+#3. Install OpenStack Wallaby and EPEL repo configs
+sudo yum install -y centos-release-openstack-wallaby epel-release
 
 #4. Install Package Installer for Python (PIP)
 sudo yum install -y python39-pip
@@ -54,6 +54,7 @@ sudo vim /etc/hosts
 10.11.11.10 internal.stratus.ok
 10.11.11.11 registry.stratus.ok
 
+
 #8. Upgrade packages
 sudo yum upgrade -y
 
@@ -63,6 +64,7 @@ sudo sysctl -p
 sudo sysctl -a | grep "net.ipv4.ip_forward ="
 
 #10. Enable NAT
+sudo ip route
 sudo tee -a /etc/rc.d/rc.local <<EOF
 iptables -t nat -F
 iptables -t nat -A POSTROUTING -s 10.0.0.0/8 -o enp7s0 -j MASQUERADE
