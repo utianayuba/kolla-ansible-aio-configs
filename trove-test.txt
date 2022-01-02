@@ -24,7 +24,6 @@ vim trove_guestagent_datastore_postgres_service.py
 ...
 
 
-unalias cp
 for U in `sudo find /var -name service.py | grep postgres | grep /var/lib/kolla`; do sudo cp -v trove_guestagent_datastore_postgres_service.py $U; done
 
 #3. Modify trove_postgresql_config.template
@@ -37,7 +36,6 @@ vim trove_postgresql_config.template
 ...
 
 
-unalias cp
 for U in `sudo find /var -name config.template | grep postgresql | grep /var/lib/kolla`; do sudo cp -v trove_postgresql_config.template $U; done
 
 #4. Create datastore versions
