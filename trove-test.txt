@@ -1,7 +1,7 @@
 #1. Download Trove Wallaby Guest image and upload it to the OpenStack Glance
-wget -c https://tarballs.opendev.org/openstack/trove/images/trove-wallaby-guest-ubuntu-bionic.qcow2 -O trove-wallaby-guest-ubuntu-bionic-20211225.qcow2
+wget -c https://tarballs.opendev.org/openstack/trove/images/trove-wallaby-guest-ubuntu-bionic.qcow2 -O trove-wallaby-guest-ubuntu-bionic-20220101.qcow2
 source admin-openrc.sh
-openstack image create trove-wallaby-guest-ubuntu-bionic-20211225 --private --disk-format qcow2 --container-format bare --tag trove --tag mysql --tag mariadb --tag postgresql --file trove-wallaby-guest-ubuntu-bionic-20211225.qcow2
+openstack image create trove-wallaby-guest-ubuntu-bionic-20220101 --private --disk-format qcow2 --container-format bare --tag trove --tag mysql --tag mariadb --tag postgresql --file trove-wallaby-guest-ubuntu-bionic-20220101.qcow2
 openstack image list
 
 #2. Modify trove_guestagent_datastore_postgres_service.py
@@ -29,13 +29,7 @@ for U in `sudo find /var -name service.py | grep postgres | grep /var/lib/kolla`
 #3. Modify trove_postgresql_config.template
 sudo cp `sudo find /var -name config.template | grep postgresql | grep /var/lib/kolla | head -1` trove_postgresql_config.template
 sudo chown karno:karno trove_postgresql_config.template
-
-vim trove_postgresql_config.template
-...
-#wal_keep_segments = 5          # in logfile segments; 0 disables
-...
-
-
+sed -i '/^[^#]/ s/\(^.*wal_keep_segments.*$\)/#\1/' trove_postgresql_config.template
 for U in `sudo find /var -name config.template | grep postgresql | grep /var/lib/kolla`; do sudo cp -v trove_postgresql_config.template $U; done
 
 #4. Create datastore versions
