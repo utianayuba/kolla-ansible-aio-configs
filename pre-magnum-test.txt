@@ -22,7 +22,7 @@ sudo cp /etc/kolla/certificates/private/root/root.crt /etc/docker/certs.d/regist
 cat <<EOF > container_images.txt
 docker.io/openstackmagnum/heat-container-agent:wallaby-stable-1
 docker.io/openstackmagnum/cluster-autoscaler:v1.20.0
-docker.io/rancher/hyperkube:v1.20.12-rancher1
+docker.io/rancher/hyperkube:v1.20.14-rancher1
 docker.io/coredns/coredns:1.6.6
 docker.io/k8scloudprovider/k8s-keystone-auth:v1.20.0
 docker.io/k8scloudprovider/openstack-cloud-controller-manager:v1.20.2
