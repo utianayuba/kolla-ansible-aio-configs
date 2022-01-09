@@ -137,12 +137,10 @@ curl https://web.stratus.ok
 curl https://web.stratus.ok/ping
 
 #8. Delete resources
-
-#https://github.com/kubernetes/cloud-provider-openstack/issues/1721
-
 kubectl delete ing test-octavia-ingress-tls
 kubectl get ing
 openstack loadbalancer list
+openstack secret list
 kubectl delete svc webserver
 kubectl get svc
 kubectl delete deployment webserver

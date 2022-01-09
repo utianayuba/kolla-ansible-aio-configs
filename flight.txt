@@ -1,12 +1,12 @@
 #1. Download and install Kolla and Kolla Ansible
-sudo yum install -y wget tar
-wget -c https://tarballs.opendev.org/openstack/kolla/kolla-stable-xena.tar.gz
-wget -c https://tarballs.opendev.org/openstack/kolla-ansible/kolla-ansible-stable-xena.tar.gz
-tar -xf kolla-stable-xena.tar.gz
-tar -xf kolla-ansible-stable-xena.tar.gz
+sudo yum install -y wget tar vim python3-wheel
+wget -c https://tarballs.opendev.org/openstack/kolla/kolla-stable-wallaby.tar.gz
+wget -c https://tarballs.opendev.org/openstack/kolla-ansible/kolla-ansible-stable-wallaby.tar.gz
+tar -xf kolla-stable-wallaby.tar.gz
+tar -xf kolla-ansible-stable-wallaby.tar.gz
 ls
-sudo pip3 install ./kolla-13.0.1.dev5
-sudo pip3 install ./kolla-ansible-13.0.1.dev24
+sudo pip3 install ./kolla-12.0.2.dev28
+sudo pip3 install ./kolla-ansible-12.2.1.dev72
 pip3 list --format=columns
 
 #2. Create the /etc/kolla directory
@@ -14,10 +14,10 @@ sudo mkdir -p /etc/kolla
 sudo chown karno:karno /etc/kolla
 
 #3. Copy the Kolla Ansible configuration files to /etc/kolla directory
-cp -r kolla-ansible-13.0.1.dev24/etc/kolla/* /etc/kolla
+cp -r kolla-ansible-12.2.1.dev72/etc/kolla/* /etc/kolla
 
 #4. Copy the all-in-one inventory files to the current directory
-cp kolla-ansible-13.0.1.dev24/ansible/inventory/all-in-one .
+cp kolla-ansible-12.2.1.dev72/ansible/inventory/all-in-one .
 
 #5. Check whether the configuration of inventory is correct or not
 ansible -i all-in-one all -m ping
@@ -66,15 +66,21 @@ enable_neutron_trunk: "yes"
 enable_neutron_port_forwarding: "yes"
 enable_octavia: "yes"
 enable_prometheus: "no"
-glance_backend_file: "yes"
+enable_swift : "yes"
+enable_swift_s3api: "yes"
+enable_trove: "yes"
 cinder_backup_driver: "nfs"
 cinder_backup_share: "10.12.12.11:/var/nfs_shares/cinder_backup"
+glance_backend_swift: "yes"
 neutron_ovn_distributed_fip: "yes"
 neutron_ovn_dhcp_agent: "yes"
 octavia_certs_country: ID
 octavia_certs_state: Jabar
 octavia_certs_organization: Stratus
 octavia_certs_organizational_unit: Octavia
+swift_devices_match_mode: "strict"
+swift_devices_name: "SWIFT_DATA"
+swift_enable_rolling_upgrade: "yes"
 
 
 #8. Modify generate-root.yml task of certificates role
@@ -190,7 +196,7 @@ sudo ip add add 10.14.14.11/24 dev br-ex
 ip add show dev br-ex
 
 #20. Install OpenStack client packages
-sudo yum install -y python3-openstackclient python3-barbicanclient python3-heatclient python3-magnumclient python3-octaviaclient
+sudo yum install -y python3-openstackclient python3-barbicanclient python3-heatclient python3-magnumclient python3-octaviaclient python3-troveclient python3-muranoclient python3-swiftclient
 
 #21. Verify OpenStack status
 cp /etc/kolla/admin-openrc.sh .
@@ -199,11 +205,11 @@ openstack endpoint list
 
 #22. Create Amphora Image
 sudo yum install -y diskimage-builder debootstrap
-wget -c https://tarballs.opendev.org/openstack/octavia/octavia-stable-xena.tar.gz
-tar -xf octavia-stable-xena.tar.gz
+wget -c https://tarballs.opendev.org/openstack/octavia/octavia-stable-wallaby.tar.gz
+tar -xf octavia-stable-wallaby.tar.gz
 screen -r 0
 ls
-cd octavia-9.0.1.dev8/diskimage-create/
+cd octavia-8.0.1.dev35/diskimage-create/
 ./diskimage-create.sh
 cd
 #Ctrl+A,D
@@ -212,11 +218,10 @@ cd
 cp /etc/kolla/octavia-openrc.sh octavia-openrc.sh
 grep OS_CACERT /etc/kolla/admin-openrc.sh >> octavia-openrc.sh
 source octavia-openrc.sh
-openstack image create amphora-x64-haproxy --disk-format qcow2 --private --tag amphora --file octavia-9.0.1.dev8/diskimage-create/amphora-x64-haproxy.qcow2
+openstack image create amphora-x64-haproxy --disk-format qcow2 --private --tag amphora --file octavia-8.0.1.dev35/diskimage-create/amphora-x64-haproxy.qcow2
 openstack image list
 
 #24. Configure Octavia health manager interface and bridge
-sudo usermod -aG docker karno
 source octavia-openrc.sh
 OCTAVIA_MGMT_PORT_IP=10.1.0.11
 

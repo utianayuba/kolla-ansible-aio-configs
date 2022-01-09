@@ -22,7 +22,7 @@ sudo cp /etc/kolla/certificates/private/root/root.crt /etc/docker/certs.d/regist
 cat <<EOF > container_images.txt
 docker.io/openstackmagnum/heat-container-agent:wallaby-stable-1
 docker.io/openstackmagnum/cluster-autoscaler:v1.20.0
-docker.io/rancher/hyperkube:v1.20.12-rancher1
+docker.io/rancher/hyperkube:v1.20.14-rancher1
 docker.io/coredns/coredns:1.6.6
 docker.io/k8scloudprovider/k8s-keystone-auth:v1.20.0
 docker.io/k8scloudprovider/openstack-cloud-controller-manager:v1.20.2
@@ -107,9 +107,9 @@ vim configure-kubernetes-minion.sh
     --volume /sys/fs/cgroup/systemd:/sys/fs/cgroup/systemd \\
 ...
 
-unalias cp
-for U in `sudo find /var -name configure-kubernetes-master.sh | grep /var/lib/kolla`; do sudo cp configure-kubernetes-master.sh $U; done
-for U in `sudo find /var -name configure-kubernetes-minion.sh | grep /var/lib/kolla`; do sudo cp configure-kubernetes-minion.sh $U; done
+
+for U in `sudo find /var -name configure-kubernetes-master.sh | grep /var/lib/kolla`; do sudo cp -v configure-kubernetes-master.sh $U; done
+for U in `sudo find /var -name configure-kubernetes-minion.sh | grep /var/lib/kolla`; do sudo cp -v configure-kubernetes-minion.sh $U; done
 
 #11. Modify Amphora provider on Octavia Ingress enable script
 sudo cp `sudo find /var -name enable-ingress-octavia.sh | grep /var/lib/kolla | head -1` .
@@ -137,5 +137,12 @@ data:
       provider: amphora
 ...
 
-unalias cp
-for U in `sudo find /var -name enable-ingress-octavia.sh | grep /var/lib/kolla`; do sudo cp enable-ingress-octavia.sh $U; done
+
+for U in `sudo find /var -name enable-ingress-octavia.sh | grep /var/lib/kolla`; do sudo cp -v enable-ingress-octavia.sh $U; done
+
+#12. Create cinderv2 service and endpoints
+source admin-openrc.sh
+openstack service create --name cinderv2 volumev2
+openstack endpoint create --region RegionOne volumev2 admin https://internal.stratus.ok:8776/v2/%\(tenant_id\)s
+openstack endpoint create --region RegionOne volumev2 internal https://internal.stratus.ok:8776/v2/%\(tenant_id\)s
+openstack endpoint create --region RegionOne volumev2 public https://external.stratus.ok:8776/v2/%\(tenant_id\)s
