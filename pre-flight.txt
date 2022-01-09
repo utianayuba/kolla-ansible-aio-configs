@@ -48,8 +48,8 @@ EOF
 
 #7. Edit name resolver
 sudo tee -a /etc/hosts <<EOF
-10.10.10.10 external.stratus.ok
-10.11.11.10 internal.stratus.ok
+10.10.10.10 osext.stratus.ok
+10.11.11.10 osint.stratus.ok
 10.11.11.11 registry.stratus.ok
 EOF
 
