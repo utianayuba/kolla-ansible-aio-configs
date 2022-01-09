@@ -139,3 +139,10 @@ data:
 
 
 for U in `sudo find /var -name enable-ingress-octavia.sh | grep /var/lib/kolla`; do sudo cp -v enable-ingress-octavia.sh $U; done
+
+#12. Create cinderv2 service and endpoints
+source admin-openrc.sh
+openstack service create --name cinderv2 volumev2
+openstack endpoint create --region RegionOne volumev2 admin https://internal.stratus.ok:8776/v2/%\(tenant_id\)s
+openstack endpoint create --region RegionOne volumev2 internal https://internal.stratus.ok:8776/v2/%\(tenant_id\)s
+openstack endpoint create --region RegionOne volumev2 public https://external.stratus.ok:8776/v2/%\(tenant_id\)s
