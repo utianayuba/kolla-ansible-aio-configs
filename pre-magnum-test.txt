@@ -146,3 +146,4 @@ openstack service create --name cinderv2 volumev2
 openstack endpoint create --region RegionOne volumev2 admin https://osint.stratus.ok:8776/v2/%\(tenant_id\)s
 openstack endpoint create --region RegionOne volumev2 internal https://osint.stratus.ok:8776/v2/%\(tenant_id\)s
 openstack endpoint create --region RegionOne volumev2 public https://osext.stratus.ok:8776/v2/%\(tenant_id\)s
+openstack endpoint list --service cinderv2
