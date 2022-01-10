@@ -10,16 +10,16 @@ openstack subnet create --subnet-range 10.14.14.0/24 --no-dhcp --gateway 10.14.1
 openstack subnet show subnet-ext
 
 #4. Create a flavor
-openstack flavor create --ram 2048 --disk 20 --vcpus 2 flavor-2-2-20
-openstack flavor create --ram 4096 --disk 40 --vcpus 4 flavor-4-4-40
-openstack flavor create --ram 8192 --disk 80 --vcpus 8 flavor-8-8-80
+openstack flavor create --vcpus 2 --ram 2048 --disk 20 flavor-2-2-20
+openstack flavor create --vcpus 4 --ram 4096 --disk 40 flavor-4-4-40
+openstack flavor create --vcpus 8 --ram 8192 --disk 80 flavor-8-8-80
 openstack flavor list
 
 #5. Create project
 openstack project create project-0
 openstack project show project-0
 
-#6. Create user with creator role to the project
+#6. Create user with the following roles to the project
 openstack user create --project project-0 --password rahasia karno
 openstack user show karno
 openstack role list
@@ -39,7 +39,7 @@ export OS_PROJECT_NAME=project-0
 export OS_TENANT_NAME=project-0
 export OS_USERNAME=karno
 export OS_PASSWORD=rahasia
-export OS_AUTH_URL=https://external.stratus.ok:5000/v3
+export OS_AUTH_URL=https://osext.stratus.ok:5000/v3
 export OS_INTERFACE=public
 export OS_ENDPOINT_TYPE=publicURL
 export OS_IDENTITY_API_VERSION=3

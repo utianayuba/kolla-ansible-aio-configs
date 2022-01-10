@@ -74,14 +74,14 @@ docker push registry.stratus.ok:4433/node-problem-detector:v0.6.2
 #9. Install and configure dnsmasq
 sudo yum install -y dnsmasq bind-utils
 sudo tee /etc/dnsmasq.d/stratus.ok.conf <<EOF
-address=/external.stratus.ok/10.10.10.10
-address=/internal.stratus.ok/10.11.11.10
+address=/osext.stratus.ok/10.10.10.10
+address=/osint.stratus.ok/10.11.11.10
 address=/registry.stratus.ok/10.11.11.11
 EOF
 sudo systemctl enable dnsmasq --now
 sudo systemctl status dnsmasq
-dig @10.11.11.11 external.stratus.ok
-dig @10.11.11.11 internal.stratus.ok
+dig @10.11.11.11 osext.stratus.ok
+dig @10.11.11.11 osint.stratus.ok
 dig @10.11.11.11 registry.stratus.ok
 
 #10. Modify Kubernetes master and minion configuration scripts
@@ -143,6 +143,7 @@ for U in `sudo find /var -name enable-ingress-octavia.sh | grep /var/lib/kolla`;
 #12. Create cinderv2 service and endpoints
 source admin-openrc.sh
 openstack service create --name cinderv2 volumev2
-openstack endpoint create --region RegionOne volumev2 admin https://internal.stratus.ok:8776/v2/%\(tenant_id\)s
-openstack endpoint create --region RegionOne volumev2 internal https://internal.stratus.ok:8776/v2/%\(tenant_id\)s
-openstack endpoint create --region RegionOne volumev2 public https://external.stratus.ok:8776/v2/%\(tenant_id\)s
+openstack endpoint create --region RegionOne volumev2 admin https://osint.stratus.ok:8776/v2/%\(tenant_id\)s
+openstack endpoint create --region RegionOne volumev2 internal https://osint.stratus.ok:8776/v2/%\(tenant_id\)s
+openstack endpoint create --region RegionOne volumev2 public https://osext.stratus.ok:8776/v2/%\(tenant_id\)s
+openstack endpoint list --service cinderv2

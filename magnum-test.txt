@@ -14,10 +14,9 @@ openstack coe cluster create kubernetes-v1.20.14-rancher1 --cluster-template tem
 openstack coe cluster list
 
 #4. Check cluster
-mkdir bin
-
-wget -c https://dl.k8s.io/release/v1.20.14/bin/linux/amd64/kubectl -O bin/kubectl
-chmod +x bin/kubectl 
+mkdir ~/bin
+wget -c https://dl.k8s.io/release/v1.20.14/bin/linux/amd64/kubectl -O ~/bin/kubectl
+chmod +x ~/bin/kubectl 
 mkdir -p ~/clusters/kubernetes-v1.20.14-rancher1
 rm -rf ~/clusters/kubernetes-v1.20.14-rancher1/config
 $(openstack coe cluster config kubernetes-v1.20.14-rancher1 --dir ~/clusters/kubernetes-v1.20.14-rancher1)
