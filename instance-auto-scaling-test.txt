@@ -196,14 +196,18 @@ exit
 #8. 6-16 minutes after loads are generated, check the metric measures, alarm and instance
 openstack metric measures show 45f040d7-db5e-4118-ae77-8486a7bc66e7 # cpu metric id
 openstack alarm list
+openstack alarm-history show 10b99859-f4ad-4183-b483-d37f3e76e132 # cpu_alarm_high id
+openstack stack event list centos-stream-8-auto-scaling
 openstack server list
 
-#9. Terminate the running dd processes and observe Orchestration begin to scale the instances back down
+#9. Terminate the running dd processes and observe orchestration begin to scale the instances back down
 ssh -l centos 10.14.14.1XX
-killall dd
+sudo killall dd
 exit
 
 #10. After 6-16 minutes, verify that the corresponding alarm has triggered
 openstack metric measures show 45f040d7-db5e-4118-ae77-8486a7bc66e7 # cpu metric id
 openstack alarm list
+openstack alarm-history show 18f65384-4d21-4b18-b557-64be41ff3792 # cpu_alarm_low id
+openstack stack event list centos-stream-8-auto-scaling
 openstack server list
