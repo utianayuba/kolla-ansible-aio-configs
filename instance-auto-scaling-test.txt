@@ -1,0 +1,209 @@
+Reference: https://access.redhat.com/documentation/en-us/red_hat_openstack_platform/16.2/html-single/auto_scaling_for_instances/index
+
+#1. Edit ceilometer/compute/discovery.py file
+docker exec -ti ceilometer_compute vi /var/lib/kolla/venv/lib/python3.6/site-packages/ceilometer/compute/discovery.py
+...
+                    "http://openstack.org/xmlns/libvirt/nova/1.1")
+...
+
+#2. Create the environment template
+mkdir instance-auto-scaling
+cat <<EOF > centos-stream-8.yaml
+heat_template_version: 2021-04-16
+description: Template to spawn an CentOS Stream 8 instance.
+
+parameters:
+  metadata:
+    type: json
+  image:
+    type: string
+    description: image used to create instance
+    default: CentOS-Stream-GenericCloud-8-20210603.0.x86_64
+  flavor:
+    type: string
+    description: instance flavor to be used
+    default: flavor-2-2-20
+  key_name:
+    type: string
+    description: keypair to be used
+    default: key-0
+  network:
+    type: string
+    description: project network to attach instance to
+    default: net-int-0
+  external_network:
+    type: string
+    description: network used for floating IPs
+    default: net-ext
+
+resources:
+  server:
+    type: OS::Nova::Server
+    properties:
+      block_device_mapping:
+        - device_name: vda
+          delete_on_termination: true
+          volume_id: { get_resource: volume }
+      flavor: {get_param: flavor}
+      key_name: {get_param: key_name}
+      metadata: {get_param: metadata}
+      networks:
+        - port: { get_resource: port }
+
+  port:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_param: network}
+      security_groups:
+        - sg-0
+
+  floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: {get_param: external_network}
+
+  floating_ip_assoc:
+    type: OS::Neutron::FloatingIPAssociation
+    properties:
+      floatingip_id: { get_resource: floating_ip }
+      port_id: { get_resource: port }
+
+  volume:
+    type: OS::Cinder::Volume
+    properties:
+      image: {get_param: image}
+      size: 20
+EOF
+
+#3. Register the Orchestration resource
+cat <<EOF > environment.yaml
+resource_registry:
+  "OS::Nova::Server::CentOSStream8": ./centos-stream-8.yaml
+EOF
+
+#4. Create the stack template.
+cat <<EOF > template.yaml
+heat_template_version: 2021-04-16
+description: Example auto scale group, policy and alarm
+  
+resources:
+  scaleup_group:
+    type: OS::Heat::AutoScalingGroup
+    properties:
+      cooldown: 300
+      desired_capacity: 1
+      max_size: 3
+      min_size: 1
+      resource:
+        type: OS::Nova::Server::CentOSStream8
+        properties:
+          metadata: {"metering.server_group": {get_param: "OS::stack_id"}}
+
+  scaleup_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: { get_resource: scaleup_group }
+      cooldown: 300
+      scaling_adjustment: 1
+
+  scaledown_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: { get_resource: scaleup_group }
+      cooldown: 300
+      scaling_adjustment: -1
+
+  cpu_alarm_high:
+    type: OS::Aodh::GnocchiAggregationByResourcesAlarm
+    properties:
+      description: Scale up if CPU > 80%
+      metric: cpu
+      aggregation_method: rate:mean
+      granularity: 300
+      evaluation_periods: 3
+      threshold: 240000000000.0
+      resource_type: instance
+      comparison_operator: gt
+      alarm_actions:
+        - str_replace:
+            template: trust+url
+            params:
+              url: {get_attr: [scaleup_policy, signal_url]}
+      query:
+        str_replace:
+          template: '{"=": {"server_group": "stack_id"}}'
+          params:
+            stack_id: {get_param: "OS::stack_id"}
+
+  cpu_alarm_low:
+    type: OS::Aodh::GnocchiAggregationByResourcesAlarm
+    properties:
+      metric: cpu
+      aggregation_method: rate:mean
+      granularity: 300
+      evaluation_periods: 3
+      threshold: 60000000000.0
+      resource_type: instance
+      comparison_operator: lt
+      alarm_actions:
+        - str_replace:
+            template: trust+url
+            params:
+              url: {get_attr: [scaledown_policy, signal_url]}
+      query:
+        str_replace:
+          template: '{"=": {"server_group": "stack_id"}}'
+          params:
+            stack_id: {get_param: "OS::stack_id"}
+
+outputs:
+  scaleup_policy_signal_url:
+    value: {get_attr: [scaleup_policy, signal_url]}
+
+  scaledown_policy_signal_url:
+    value: {get_attr: [scaledown_policy, signal_url]}
+EOF
+
+#4. Verify metric and alarm before instance deployment
+source karno-openrc.sh
+openstack metric archive-policy list
+openstack metric archive-policy-rule list
+openstack metric resource-type list
+
+#5. Build the environment and deploy the instance. Verify the deployment after the stack is completely created
+openstack stack create  -t template.yaml -e environment.yaml centos-stream-8-auto-scaling
+openstack stack list
+openstack server list
+openstack alarm list
+#Wait around 5 minutes
+openstack metric list
+openstack metric resource list
+openstack metric resource show 352deef1-00e7-48f3-a76e-9d3115962d8c #instance resource id
+
+#6. Show the current metric measures of cpu metric
+openstack metric measures show 45f040d7-db5e-4118-ae77-8486a7bc66e7 # cpu metric id
+
+#7. Log on to the instance and run several dd commands to generate the load
+ssh -l centos 10.14.14.1XX
+
+sudo dd if=/dev/zero of=/dev/null &
+sudo dd if=/dev/zero of=/dev/null &
+sudo dd if=/dev/zero of=/dev/null &
+exit
+
+#8. 6-16 minutes after loads are generated, check the metric measures, alarm and instance
+openstack metric measures show 45f040d7-db5e-4118-ae77-8486a7bc66e7 # cpu metric id
+openstack alarm list
+openstack server list
+
+#9. Terminate the running dd processes and observe Orchestration begin to scale the instances back down
+ssh -l centos 10.14.14.1XX
+killall dd
+exit
+
+#10. After 6-16 minutes, verify that the corresponding alarm has triggered
+openstack metric measures show 45f040d7-db5e-4118-ae77-8486a7bc66e7 # cpu metric id
+openstack alarm list
+openstack server list
