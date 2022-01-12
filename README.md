@@ -5,7 +5,7 @@ Deploy All-In-One node OpenStack using Kolla-Ansible for following use cases:
 - Database as a Service
 - Web application
 
-OpenStack Services: Core Services, Aodh, Barbican, Ceilometer, Cinder, Gnocchi, Kuryr, Magnum, Octavia, Swift, Trove
+OpenStack Services: Core Services, Aodh, Barbican, Ceilometer, Cinder, Designate, Gnocchi, Kuryr, Magnum, Octavia, Swift, Trove
 
 Hardware requirements:
 - CPU 4 cores

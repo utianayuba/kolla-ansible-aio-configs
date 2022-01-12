@@ -71,15 +71,14 @@ docker tag k8s.gcr.io/node-problem-detector:v0.6.2 registry.stratus.ok:4433/node
 docker push registry.stratus.ok:4433/node-problem-detector:v0.6.2
 #Ctrl+A,D
 
-#9. Install and configure dnsmasq
-sudo yum install -y dnsmasq bind-utils
-sudo tee /etc/dnsmasq.d/stratus.ok.conf <<EOF
-address=/osext.stratus.ok/10.10.10.10
-address=/osint.stratus.ok/10.11.11.10
-address=/registry.stratus.ok/10.11.11.11
-EOF
-sudo systemctl enable dnsmasq --now
-sudo systemctl status dnsmasq
+#9. Create zone and recordset
+source karno-openrc.sh 
+openstack zone create --email karno@stratus.ok stratus.ok.
+openstack zone list
+openstack recordset create --record '10.10.10.10' --type A stratus.ok. osext
+openstack recordset create --record '10.11.11.10' --type A stratus.ok. osint
+openstack recordset create --record '10.11.11.11' --type A stratus.ok. registry
+openstack recordset list stratus.ok.
 dig @10.11.11.11 osext.stratus.ok
 dig @10.11.11.11 osint.stratus.ok
 dig @10.11.11.11 registry.stratus.ok
