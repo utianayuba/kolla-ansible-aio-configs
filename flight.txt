@@ -5,8 +5,8 @@ wget -c https://tarballs.opendev.org/openstack/kolla-ansible/kolla-ansible-stabl
 tar -xf kolla-stable-wallaby.tar.gz
 tar -xf kolla-ansible-stable-wallaby.tar.gz
 ls
-sudo pip3 install ./kolla-12.1.1.dev1
-sudo pip3 install ./kolla-ansible-12.3.1.dev6
+sudo pip3 install ./kolla-12.1.1.dev20
+sudo pip3 install ./kolla-ansible-12.3.1.dev67
 pip3 list --format=columns
 
 #2. Create the /etc/kolla directory
@@ -14,10 +14,10 @@ sudo mkdir -p /etc/kolla
 sudo chown karno:karno /etc/kolla
 
 #3. Copy the Kolla Ansible configuration files to /etc/kolla directory
-cp -r kolla-ansible-12.3.1.dev6/etc/kolla/* /etc/kolla
+cp -r kolla-ansible-12.3.1.dev67/etc/kolla/* /etc/kolla
 
 #4. Copy the all-in-one inventory files to the current directory
-cp kolla-ansible-12.3.1.dev6/ansible/inventory/all-in-one .
+cp kolla-ansible-12.3.1.dev67/ansible/inventory/all-in-one .
 
 #5. Check whether the configuration of inventory is correct or not
 ansible -i all-in-one all -m ping
@@ -92,6 +92,8 @@ octavia_certs_organizational_unit: "Octavia"
 swift_devices_match_mode: "strict"
 swift_devices_name: "SWIFT_DATA"
 swift_enable_rolling_upgrade: "yes"
+docker_registry: "quay.io"
+docker_namespace: "openstack.kolla"
 EOF
 
 #8. Modify generate-root.yml task of certificates role
@@ -269,7 +271,7 @@ wget -c https://tarballs.opendev.org/openstack/octavia/octavia-stable-wallaby.ta
 tar -xf octavia-stable-wallaby.tar.gz
 screen -r 0
 ls
-cd octavia-8.0.1.dev35/diskimage-create/
+cd octavia-8.0.2.dev6/
 ./diskimage-create.sh
 cd
 #Ctrl+A,D
@@ -278,7 +280,7 @@ cd
 cp /etc/kolla/octavia-openrc.sh octavia-openrc.sh
 grep OS_CACERT /etc/kolla/admin-openrc.sh >> octavia-openrc.sh
 source octavia-openrc.sh
-openstack image create amphora-x64-haproxy --disk-format qcow2 --private --tag amphora --file octavia-8.0.1.dev35/diskimage-create/amphora-x64-haproxy.qcow2
+openstack image create amphora-x64-haproxy --disk-format qcow2 --private --tag amphora --file octavia-8.0.2.dev6/diskimage-create/amphora-x64-haproxy.qcow2
 openstack image list
 
 #31. Configure Octavia health manager interface and bridge

@@ -63,7 +63,7 @@ sudo sysctl -a | grep "net.ipv4.ip_forward ="
 
 #10. Enable NAT
 sudo ip route
-DEFINT=enp4s0
+DEFINT=enp7s0
 sudo tee -a /etc/rc.d/rc.local <<EOF
 iptables -t nat -F
 iptables -t nat -A POSTROUTING -s 10.0.0.0/8 -o $DEFINT -j MASQUERADE

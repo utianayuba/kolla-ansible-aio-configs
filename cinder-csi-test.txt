@@ -1,7 +1,7 @@
 #1. Download kubernetes cloud provider openstack repo and copy cinder-csi-plugin manifests directory
-wget -c https://github.com/kubernetes/cloud-provider-openstack/archive/refs/tags/v1.20.5.zip -O cloud-provider-openstack-1.20.5.zip
-unzip cloud-provider-openstack-1.20.5.zip
-cp -r cloud-provider-openstack-1.20.5/manifests/cinder-csi-plugin .
+wget -c https://github.com/kubernetes/cloud-provider-openstack/archive/refs/tags/v1.21.0.zip -O cloud-provider-openstack-1.21.0.zip
+unzip cloud-provider-openstack-1.21.0.zip
+cp -r cloud-provider-openstack-1.21.0/manifests/cinder-csi-plugin .
 
 #2. Copy the cloud config file from master instance and encode the content using base64
 source karno-openrc.sh
@@ -20,7 +20,7 @@ vim cinder-csi-plugin/csi-secret-cinderplugin.yaml
 vim cinder-csi-plugin/cinder-csi-controllerplugin.yaml
 ...
         - name: cinder-csi-plugin
-          image: docker.io/k8scloudprovider/cinder-csi-plugin:v1.20.3
+          image: docker.io/k8scloudprovider/cinder-csi-plugin:v1.21.0
 ...
           volumeMounts:
 ...
@@ -39,7 +39,7 @@ vim cinder-csi-plugin/cinder-csi-controllerplugin.yaml
 vim cinder-csi-plugin/cinder-csi-nodeplugin.yaml
 ...
         - name: cinder-csi-plugin
-          image: docker.io/k8scloudprovider/cinder-csi-plugin:v1.20.3
+          image: docker.io/k8scloudprovider/cinder-csi-plugin:v1.21.0
 ...
           volumeMounts:
 ...
