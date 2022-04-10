@@ -1,7 +1,7 @@
 #1. Download Trove Wallaby Guest image and upload it to the OpenStack Glance
-wget -c https://tarballs.opendev.org/openstack/trove/images/trove-wallaby-guest-ubuntu-bionic.qcow2 -O trove-wallaby-guest-ubuntu-bionic-20220101.qcow2
+wget -c https://tarballs.opendev.org/openstack/trove/images/trove-wallaby-guest-ubuntu-bionic.qcow2 -O trove-wallaby-guest-ubuntu-bionic-20220305.qcow2
 source admin-openrc.sh
-openstack image create trove-wallaby-guest-ubuntu-bionic-20220101 --private --disk-format qcow2 --container-format bare --tag trove --tag mysql --tag mariadb --tag postgresql --file trove-wallaby-guest-ubuntu-bionic-20220101.qcow2
+openstack image create trove-wallaby-guest-ubuntu-bionic-20220305 --private --disk-format qcow2 --container-format bare --tag trove --tag mysql --tag mariadb --tag postgresql --file trove-wallaby-guest-ubuntu-bionic-20220305.qcow2
 openstack image list
 
 #2. Modify trove_guestagent_datastore_postgres_service.py
@@ -34,7 +34,7 @@ for U in `sudo find /var -name config.template | grep postgresql | grep /var/lib
 
 #4. Create datastore versions
 openstack datastore version create 8 mysql mysql "" --image-tags trove,mysql --active --default
-openstack datastore version create 10.7 mariadb mariadb "" --image-tags trove,mariadb --active --default
+openstack datastore version create 10 mariadb mariadb "" --image-tags trove,mariadb --active --default
 openstack datastore version create 14 postgresql postgresql "" --image-tags trove,postgresql --active --default
 openstack datastore list
 openstack datastore version list mysql
@@ -45,7 +45,7 @@ openstack datastore version list postgresql
 source karno-openrc.sh
 openstack network list
 openstack database instance create --flavor flavor-2-2-20 --size 1 --databases db0 --users dbuser:dbpasswd --datastore mysql --datastore-version 8 --nic net-id=eead2df2-a4c6-4b25-b3d8-c97c2136450c mysql-8
-openstack database instance create --flavor flavor-2-2-20 --size 1 --databases db0 --users dbuser:dbpasswd --datastore mariadb --datastore-version 10.7 --nic net-id=eead2df2-a4c6-4b25-b3d8-c97c2136450c mariadb-10.7
+openstack database instance create --flavor flavor-2-2-20 --size 1 --databases db0 --users dbuser:dbpasswd --datastore mariadb --datastore-version 10 --nic net-id=eead2df2-a4c6-4b25-b3d8-c97c2136450c mariadb-10
 openstack database instance create --flavor flavor-2-2-20 --size 1 --databases db0 --users dbuser:dbpasswd --datastore postgresql --datastore-version 14 --nic net-id=eead2df2-a4c6-4b25-b3d8-c97c2136450c postgresql-14
 openstack database instance list
 

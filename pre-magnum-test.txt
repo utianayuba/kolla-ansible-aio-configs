@@ -21,14 +21,14 @@ sudo cp /etc/kolla/certificates/private/root/root.crt /etc/docker/certs.d/regist
 #7. Create container image list file
 cat <<EOF > container_images.txt
 docker.io/openstackmagnum/heat-container-agent:wallaby-stable-1
-docker.io/openstackmagnum/cluster-autoscaler:v1.20.0
-docker.io/rancher/hyperkube:v1.20.14-rancher1
+docker.io/openstackmagnum/cluster-autoscaler:v1.21.0
+docker.io/rancher/hyperkube:v1.21.9-rancher1
 docker.io/coredns/coredns:1.6.6
-docker.io/k8scloudprovider/k8s-keystone-auth:v1.20.0
-docker.io/k8scloudprovider/openstack-cloud-controller-manager:v1.20.2
-docker.io/k8scloudprovider/cinder-csi-plugin:v1.20.3
-docker.io/k8scloudprovider/magnum-auto-healer:v1.20.5
-docker.io/k8scloudprovider/octavia-ingress-controller:v1.20.2
+docker.io/k8scloudprovider/k8s-keystone-auth:v1.21.0
+docker.io/k8scloudprovider/openstack-cloud-controller-manager:v1.21.0
+docker.io/k8scloudprovider/cinder-csi-plugin:v1.21.0
+docker.io/k8scloudprovider/magnum-auto-healer:v1.21.1
+docker.io/k8scloudprovider/octavia-ingress-controller:v1.21.0
 docker.io/grafana/grafana:5.1.5
 docker.io/prom/node-exporter:latest
 docker.io/prom/prometheus:latest
@@ -83,7 +83,26 @@ dig @10.11.11.11 osext.stratus.ok
 dig @10.11.11.11 osint.stratus.ok
 dig @10.11.11.11 registry.stratus.ok
 
-#10. Modify Kubernetes master and minion configuration scripts
+#10. Enable DNS forwarder on bind9 (do not do it in production)
+sudo vim /etc/kolla/designate-backend-bind9/named.conf
+
+options {
+...
+        recursion yes;
+...        
+        forwarders {
+                8.8.8.8;
+                8.8.4.4;
+        };
+
+};
+
+
+docker restart designate_backend_bind9
+docker ps | grep designate_backend_bind9
+dig @10.11.11.11 google.com
+
+#11. Modify Kubernetes master and minion configuration scripts
 sudo cp `sudo find /var -name configure-kubernetes-master.sh | grep /var/lib/kolla | head -1` .
 sudo chown karno:karno configure-kubernetes-master.sh
 sudo cp `sudo find /var -name configure-kubernetes-minion.sh | grep /var/lib/kolla | head -1` .
@@ -110,7 +129,7 @@ vim configure-kubernetes-minion.sh
 for U in `sudo find /var -name configure-kubernetes-master.sh | grep /var/lib/kolla`; do sudo cp -v configure-kubernetes-master.sh $U; done
 for U in `sudo find /var -name configure-kubernetes-minion.sh | grep /var/lib/kolla`; do sudo cp -v configure-kubernetes-minion.sh $U; done
 
-#11. Modify Amphora provider on Octavia Ingress enable script
+#12. Modify Amphora provider on Octavia Ingress enable script
 sudo cp `sudo find /var -name enable-ingress-octavia.sh | grep /var/lib/kolla | head -1` .
 sudo chown karno:karno enable-ingress-octavia.sh
 
@@ -139,7 +158,7 @@ data:
 
 for U in `sudo find /var -name enable-ingress-octavia.sh | grep /var/lib/kolla`; do sudo cp -v enable-ingress-octavia.sh $U; done
 
-#12. Create cinderv2 service and endpoints
+#13. Create cinderv2 service and endpoints
 source admin-openrc.sh
 openstack service create --name cinderv2 volumev2
 openstack endpoint create --region RegionOne volumev2 admin https://osint.stratus.ok:8776/v2/%\(tenant_id\)s

@@ -15,26 +15,28 @@ for U in {10..13}; do ip add show dev dummy${U}; done
 
 #2. Install NFS service
 sudo yum install -y nfs-utils
-sudo mkdir -p /var/nfs_shares/cinder
-sudo mkdir -p /var/nfs_shares/cinder_backup
+sudo mkdir -p /nfs_shares/cinder
+sudo mkdir -p /nfs_shares/cinder_backup
 sudo tee /etc/exports <<EOF
-/var/nfs_shares/cinder 10.12.12.0/24(rw,sync,no_root_squash)
-/var/nfs_shares/cinder_backup 10.12.12.0/24(rw,sync,no_root_squash)
+/nfs_shares/cinder 10.12.12.0/24(rw,sync,no_root_squash)
+/nfs_shares/cinder_backup 10.12.12.0/24(rw,sync,no_root_squash)
 EOF
 sudo systemctl enable nfs-server --now
 sudo systemctl status nfs-server
 sudo exportfs
 showmount -e 10.12.12.11
 
-#3. Install OpenStack Wallaby and EPEL repo configs
-sudo yum install -y centos-release-openstack-wallaby epel-release
+#3. Install OpenStack Yoga and EPEL repo configs
+sudo wget -c https://trunk.rdoproject.org/centos8-yoga/current/delorean.repo -O /etc/yum.repos.d/delorean.repo
+sudo yum install -y centos-release-openstack-xena epel-release
 sudo yum erase -y epel-next-release
 
 #4. Install Package Installer for Python (PIP)
+sudo yum install -y python39
 sudo yum install -y python3-pip python3-cryptography
 
 #5. Download and install Ansible
-sudo pip3 install 'ansible<3.0'
+sudo pip3 install 'ansible<6.0'
 pip3 list --format=columns
 
 #6. Configure Ansible
@@ -63,7 +65,7 @@ sudo sysctl -a | grep "net.ipv4.ip_forward ="
 
 #10. Enable NAT
 sudo ip route
-DEFINT=enp4s0
+DEFINT=enp7s0
 sudo tee -a /etc/rc.d/rc.local <<EOF
 iptables -t nat -F
 iptables -t nat -A POSTROUTING -s 10.0.0.0/8 -o $DEFINT -j MASQUERADE
