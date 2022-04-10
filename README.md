@@ -1,4 +1,4 @@
-# kolla-ansible-aio-configs wallaby-centos
+# kolla-ansible-aio-configs yoga-centos
 
 Deploy All-In-One node OpenStack using Kolla-Ansible for following use cases:
 - Containers workload provisioning
@@ -10,8 +10,8 @@ OpenStack Services: Core Services, Aodh, Barbican, Ceilometer, Cinder, Designate
 Hardware requirements:
 - CPU 4 cores
 - RAM 16 GB
-- HDD/SSD 256 GB (/ 28 GB, swap 8 GB, /var 100 GB, part0 40 GB, part1 40 GB, part2 40 GB)
-- OS: CentOS Stream 8
+- HDD/SSD 256 GB (/ 28 GB, swap 8 GB, /var 50 GB, /nfs_shares 50 GB, part0 40 GB, part1 40 GB, part2 40 GB)
+- OS: CentOS Stream 8 Minimal
 - Internet connectivity
 
 Exec based on the following order:
