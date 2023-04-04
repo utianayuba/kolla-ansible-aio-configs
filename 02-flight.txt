@@ -291,6 +291,7 @@ sudo ip link set o-hm0 up
 sudo ip link set dev o-hm0 address $MGMT_PORT_MAC
 sudo ip add add dev o-hm0 ${OCTAVIA_MGMT_PORT_IP}/24
 ip add show dev o-hm0
+ping -c 3 10.1.0.1
 
 #32. Add rule to allow port 5555/UDP on lb-mgmt-sec-grp security group
 source octavia-openrc.sh
