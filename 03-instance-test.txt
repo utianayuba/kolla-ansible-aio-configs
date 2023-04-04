@@ -77,12 +77,12 @@ openstack keypair create --public-key ~/.ssh/id_rsa.pub --type ssh key-0
 openstack keypair show key-0
 
 #13. Download CentOS Stream 8 cloud image and upload to OpenStack glance image service
-wget -c https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-20220125.1.x86_64.qcow2
-openstack image create --disk-format qcow2 --file CentOS-Stream-GenericCloud-8-20220125.1.x86_64.qcow2 --progress CentOS-Stream-GenericCloud-8-20220125.1.x86_64
-openstack image show CentOS-Stream-GenericCloud-8-20220125.1.x86_64
+wget -c https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-20230308.3.x86_64.qcow2
+openstack image create --disk-format qcow2 --file CentOS-Stream-GenericCloud-8-20230308.3.x86_64.qcow2 --progress CentOS-Stream-GenericCloud-8-20230308.3.x86_64
+openstack image show CentOS-Stream-GenericCloud-8-20230308.3.x86_64
 
 #14. Create an instance with bootable volume
-openstack server create --flavor flavor-2-2-20 --network net-int-0 --security-group sg-0 --key-name key-0 --image CentOS-Stream-GenericCloud-8-20220125.1.x86_64 --boot-from-volume 20 instance-0
+openstack server create --flavor flavor-2-2-20 --network net-int-0 --security-group sg-0 --key-name key-0 --image CentOS-Stream-GenericCloud-8-20230308.3.x86_64 --boot-from-volume 20 instance-0
 openstack server list
 openstack volume list
 openstack console log show instance-0
