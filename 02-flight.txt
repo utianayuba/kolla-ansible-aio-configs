@@ -1,12 +1,7 @@
 #1. Download and install Kolla and Kolla Ansible
-sudo yum install -y wget tar vim python3-wheel
-wget -c https://tarballs.opendev.org/openstack/kolla/kolla-stable-yoga.tar.gz
-wget -c https://tarballs.opendev.org/openstack/kolla-ansible/kolla-ansible-stable-yoga.tar.gz
-tar -xf kolla-stable-yoga.tar.gz
-tar -xf kolla-ansible-stable-yoga.tar.gz
-ls
-sudo pip3 install ./kolla-14.0.0.0rc2.dev3
-sudo pip3 install ./kolla-ansible-14.0.0.0rc2.dev2
+sudo yum install -y wget tar vim python3-wheel git
+sudo pip3 install git+https://github.com/openstack/kolla@stable/yoga
+sudo pip3 install git+https://github.com/openstack/kolla-ansible@stable/yoga
 pip3 list --format=columns
 
 #2. Create the /etc/kolla directory
@@ -14,26 +9,29 @@ sudo mkdir -p /etc/kolla
 sudo chown karno:karno /etc/kolla
 
 #3. Copy the Kolla Ansible configuration files to /etc/kolla directory
-cp -r kolla-ansible-14.0.0.0rc2.dev2/etc/kolla/* /etc/kolla
+cp -r /usr/local/share/kolla-ansible/etc_examples/kolla/* /etc/kolla
 
 #4. Copy the all-in-one inventory files to the current directory
-cp kolla-ansible-14.0.0.0rc2.dev2/ansible/inventory/all-in-one .
+cp /usr/local/share/kolla-ansible/ansible/inventory/all-in-one .
 
 #5. Check whether the configuration of inventory is correct or not
 ansible -i all-in-one all -m ping
 
-#6. Generate Kolla passwords
+#6. Install Ansible Galaxy requirements¶
+kolla-ansible install-deps
+
+#7. Generate Kolla passwords
 kolla-genpwd
 
-#7. Edit the main configuration file of Kolla Ansible
+#8. Edit the main configuration file of Kolla Ansible
 tee -a /etc/kolla/globals.yml <<EOF
 
-kolla_install_type: "source"
-openstack_release: "yoga"
 kolla_internal_vip_address: "10.11.11.10"
 kolla_internal_fqdn: "osint.stratus.ok"
 kolla_external_vip_address: "10.10.10.10"
 kolla_external_fqdn: "osext.stratus.ok"
+docker_registry: "quay.io"
+docker_namespace: "openstack.kolla"
 network_interface: "dummy11"
 kolla_external_vip_interface: "dummy10"
 api_interface: "dummy11"
@@ -76,28 +74,22 @@ enable_redis: "yes"
 enable_swift : "yes"
 enable_swift_s3api: "yes"
 enable_trove: "yes"
-cinder_backup_driver: "nfs"
-cinder_backup_share: "10.12.12.11:/nfs_shares/cinder_backup"
-cinder_coordination_backend: "redis"
-designate_backend: "bind9"
-designate_ns_record: "ns.stratus.ok"
 glance_backend_swift: "yes"
 gnocchi_backend_storage: "swift"
 gnocchi_incoming_storage: "redis"
+cinder_coordination_backend: "redis"
+cinder_backup_driver: "nfs"
+cinder_backup_share: "10.12.12.11:/nfs_shares/cinder_backup"
+designate_ns_record: "ns.stratus.ok"
 neutron_ovn_distributed_fip: "yes"
 neutron_ovn_dhcp_agent: "yes"
 octavia_certs_country: "ID"
 octavia_certs_state: "Jabar"
 octavia_certs_organization: "Stratus"
 octavia_certs_organizational_unit: "Octavia"
-swift_devices_match_mode: "strict"
-swift_devices_name: "SWIFT_DATA"
-swift_enable_rolling_upgrade: "yes"
-docker_registry: "quay.io"
-docker_namespace: "openstack.kolla"
 EOF
 
-#8. Modify generate-root.yml task of certificates role
+#9. Modify generate-root.yml task of certificates role
 sudo vim /usr/local/share/kolla-ansible/ansible/roles/certificates/tasks/generate-root.yml
 
 .....
@@ -105,7 +97,7 @@ sudo vim /usr/local/share/kolla-ansible/ansible/roles/certificates/tasks/generat
 .....
 
 
-#9. Modify openssl-kolla.cnf jinja2 template of certificates role
+#10. Modify openssl-kolla.cnf jinja2 template of certificates role
 sudo vim /usr/local/share/kolla-ansible/ansible/roles/certificates/templates/openssl-kolla.cnf.j2
 
 .....
@@ -118,7 +110,7 @@ commonName = {{ kolla_external_fqdn }}
 .....
 
 
-#10. Modify openssl-kolla-internal.cnf jinja2 template of certificates role
+#11. Modify openssl-kolla-internal.cnf jinja2 template of certificates role
 sudo vim /usr/local/share/kolla-ansible/ansible/roles/certificates/templates/openssl-kolla-internal.cnf.j2
 
 .....
@@ -131,7 +123,7 @@ commonName = {{ kolla_internal_fqdn }}
 .....
 
 
-#11. Modify openssl-kolla-backend.cnf jinja2 template of certificates role
+#12. Modify openssl-kolla-backend.cnf jinja2 template of certificates role
 sudo vim /usr/local/share/kolla-ansible/ansible/roles/certificates/templates/openssl-kolla-backend.cnf.j2
 
 .....
@@ -144,7 +136,7 @@ commonName = {{ ansible_dummy11.ipv4.address }}
 .....
 
 
-#12. Generate self-sign certificates
+#13. Generate self-sign certificates
 kolla-ansible -i all-in-one certificates
 
 openssl x509 -req -extfile <(printf "subjectAltName=DNS:osext.stratus.ok") -days 1024 -in /etc/kolla/certificates/private/external/external.csr -CA /etc/kolla/certificates/private/root/root.crt -CAkey /etc/kolla/certificates/private/root/root.key -CAcreateserial -out /etc/kolla/certificates/private/external/external.crt
@@ -160,16 +152,16 @@ openssl x509 -in /etc/kolla/certificates/backend-cert.pem -text
 sudo cp /etc/kolla/certificates/ca/root.crt /etc/pki/ca-trust/source/anchors/stratus-root-ca.crt
 sudo update-ca-trust
 
-#13. Generate certificates for octavia deployment
+#14. Generate certificates for octavia deployment
 kolla-ansible -i all-in-one octavia-certificates
 
-#14. Neutron custom configuration
+#15. Neutron custom configuration
 tee /etc/kolla/config/neutron.conf <<EOF
 [DEFAULT]
 global_physnet_mtu = 1558
 EOF
 
-#15. MTU configuration
+#16. MTU configuration
 mkdir /etc/kolla/config/neutron
 tee /etc/kolla/config/neutron/ml2_conf.ini <<EOF
 [ml2]
@@ -177,7 +169,7 @@ path_mtu = 1558
 physical_network_mtus = physnet1:1500
 EOF
 
-#16. Magnum custom configuration
+#17. Magnum custom configuration
 tee /etc/kolla/config/magnum.conf <<EOF
 [drivers]
 openstack_ca_file = /etc/pki/ca-trust/source/anchors/kolla-customca-root.crt
@@ -186,21 +178,21 @@ openstack_ca_file = /etc/pki/ca-trust/source/anchors/kolla-customca-root.crt
 cluster_user_trust = true
 EOF
 
-#17. Define NFS shares for Cinder backend
+#18. Define NFS shares for Cinder backend
 tee /etc/kolla/config/nfs_shares <<EOF
 10.12.12.11:/nfs_shares/cinder
 EOF
 
-#18. Prepare Swift disks by add a special partition name and filesystem labels
+#19. Prepare Swift disks by add a special partition name and filesystem labels
 index=0
 for p in {4..6}
 do
-  sudo parted -s /dev/sda name $p SWIFT_DATA
+  sudo parted -s /dev/sda name $p KOLLA_SWIFT_DATA
   sudo mkfs.xfs -f -L part${index} /dev/sda${p}
   (( index++ ))
 done
 
-#19. Install Docker
+#20. Install Docker
 sudo yum remove -y docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
 sudo yum install -y yum-utils
 sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
@@ -209,54 +201,53 @@ sudo systemctl enable docker --now
 sudo systemctl status docker
 sudo usermod -aG docker karno
 
-#20. Prepare for Swift rings generating
+#21. Prepare for Swift rings generating
 mkdir -p /etc/kolla/config/swift/
 KOLLA_SWIFT_BASE_IMAGE="kolla/centos-source-swift-base:yoga"
 NODE=10.12.12.11
 
-#21. Generate Swift object ring
+#22. Generate Swift object ring
 docker run --rm -v /etc/kolla/config/swift/:/etc/kolla/config/swift/ $KOLLA_SWIFT_BASE_IMAGE swift-ring-builder /etc/kolla/config/swift/object.builder create 10 3 1
 for i in {0..2}
 do
   docker run --rm -v /etc/kolla/config/swift/:/etc/kolla/config/swift/ $KOLLA_SWIFT_BASE_IMAGE swift-ring-builder /etc/kolla/config/swift/object.builder add r1z1-${NODE}:6000/part${i} 1
 done
 
-#22. Generate Swift account ring
+#23. Generate Swift account ring
 docker run --rm -v /etc/kolla/config/swift/:/etc/kolla/config/swift/ $KOLLA_SWIFT_BASE_IMAGE swift-ring-builder /etc/kolla/config/swift/account.builder create 10 3 1
 for i in {0..2}
 do
   docker run --rm -v /etc/kolla/config/swift/:/etc/kolla/config/swift/ $KOLLA_SWIFT_BASE_IMAGE swift-ring-builder /etc/kolla/config/swift/account.builder add r1z1-${NODE}:6001/part${i} 1
 done
 
-#23. Generate Swift container ring
+#24. Generate Swift container ring
 docker run --rm -v /etc/kolla/config/swift/:/etc/kolla/config/swift/ $KOLLA_SWIFT_BASE_IMAGE swift-ring-builder /etc/kolla/config/swift/container.builder create 10 3 1
 for i in {0..2}
 do
   docker run --rm -v /etc/kolla/config/swift/:/etc/kolla/config/swift/ $KOLLA_SWIFT_BASE_IMAGE swift-ring-builder /etc/kolla/config/swift/container.builder add r1z1-${NODE}:6002/part${i} 1
 done
 
-#24. Rebalance the ring files
+#25. Rebalance the ring files
 for ring in object account container
 do
   docker run --rm -v /etc/kolla/config/swift/:/etc/kolla/config/swift/ $KOLLA_SWIFT_BASE_IMAGE swift-ring-builder /etc/kolla/config/swift/${ring}.builder rebalance;
 done
 
-#25. Deploy the OpenStack
+#26. Deploy the OpenStack
 sudo yum install -y screen
 screen -R 0
 kolla-ansible -i all-in-one bootstrap-servers
 kolla-ansible -i all-in-one prechecks
 kolla-ansible -i all-in-one deploy
 #Ctrl+A,D
-sudo ip add add 10.10.10.10/24 dev dummy10
-sudo ip add add 10.11.11.10/24 dev dummy11
+sudo nmcli con mod dummy-dummy10 +ipv4.addresses "10.10.10.11/24,10.10.10.10/24"
+sudo nmcli con mod dummy-dummy11 +ipv4.addresses "10.11.11.11/24,10.11.11.10/24"
 screen -r 0
 kolla-ansible -i all-in-one post-deploy
 kolla-ansible -i all-in-one check
 #Ctrl+A,D
 
 #26. Activate br-ex interface
-sudo ip link set br-ex up
 sudo ip add add 10.14.14.11/24 dev br-ex
 ip add show dev br-ex
 
@@ -270,20 +261,16 @@ openstack endpoint list
 
 #29. Create Amphora Image
 sudo yum install -y diskimage-builder debootstrap
-wget -c https://tarballs.opendev.org/openstack/octavia/octavia-stable-yoga.tar.gz
-tar -xf octavia-stable-yoga.tar.gz
+git clone https://github.com/openstack/octavia.git -b stable/yoga
 screen -r 0
-ls
-cd octavia-10.0.0.0rc2.dev2/diskimage-create
-./diskimage-create.sh
-cd
+./octavia/diskimage-create/diskimage-create.sh
 #Ctrl+A,D
 
 #30. Register Amphora Image to Glance
 cp /etc/kolla/octavia-openrc.sh octavia-openrc.sh
 grep OS_CACERT /etc/kolla/admin-openrc.sh >> octavia-openrc.sh
 source octavia-openrc.sh
-openstack image create amphora-x64-haproxy --disk-format qcow2 --private --tag amphora --file octavia-10.0.0.0rc2.dev2/diskimage-create/amphora-x64-haproxy.qcow2
+openstack image create amphora-x64-haproxy --disk-format qcow2 --private --tag amphora --file amphora-x64-haproxy.qcow2
 openstack image list
 
 #31. Configure Octavia health manager interface and bridge
