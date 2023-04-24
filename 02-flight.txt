@@ -241,7 +241,11 @@ kolla-ansible -i all-in-one prechecks
 kolla-ansible -i all-in-one deploy
 #Ctrl+A,D
 sudo nmcli con mod dummy-dummy10 +ipv4.addresses "10.10.10.11/24,10.10.10.10/24"
+sudo nmcli con down dummy-dummy10
+sudo nmcli con up dummy-dummy10
 sudo nmcli con mod dummy-dummy11 +ipv4.addresses "10.11.11.11/24,10.11.11.10/24"
+sudo nmcli con down dummy-dummy11
+sudo nmcli con up dummy-dummy11
 screen -r 0
 kolla-ansible -i all-in-one post-deploy
 kolla-ansible -i all-in-one check
