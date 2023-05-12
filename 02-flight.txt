@@ -313,3 +313,8 @@ source admin-openrc.sh
 openstack role list
 openstack role add --user admin --project admin load-balancer_admin
 openstack role assignment list --names --user admin
+
+#35. Set DNS nameserver to lb-mgmt-subnet subnet
+source admin-openrc.sh
+openstack subnet set --dns-nameserver 192.168.18.1 lb-mgmt-subnet
+openstack subnet show lb-mgmt-subnet
