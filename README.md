@@ -18,10 +18,4 @@ Exec based on the following order:
 1. pre-flight.txt
 2. flight.txt
 3. instance-test.txt
-4. instance-auto-scaling-test.txt
-5. pre-magnum-test.txt
-6. magnum-test.txt
-7. octavia-ingress-controller-test.txt
-8. octavia-ingress-controller-tls-test.txt
-9. cinder-csi-test.txt
-10. trove-test.txt
+4. magnum-test.txt

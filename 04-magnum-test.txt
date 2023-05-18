@@ -1,0 +1,67 @@
+#1. Create zone and recordset
+source karno-openrc.sh 
+openstack zone create --email karno@stratus.ok stratus.ok.
+openstack zone list
+openstack recordset create --record '10.10.10.10' --type A stratus.ok. osext
+openstack recordset create --record '10.11.11.10' --type A stratus.ok. osint
+openstack recordset create --record '10.11.11.11' --type A stratus.ok. registry
+openstack recordset list stratus.ok.
+dig @10.11.11.11 osext.stratus.ok
+dig @10.11.11.11 osint.stratus.ok
+dig @10.11.11.11 registry.stratus.ok
+
+#2. Enable DNS forwarder on bind9 (do not do it in production)
+sudo vim /etc/kolla/designate-backend-bind9/named.conf
+
+options {
+...
+        recursion yes;
+...        
+        forwarders {
+                8.8.8.8;
+                8.8.4.4;
+        };
+
+};
+
+
+docker restart designate_backend_bind9
+docker ps | grep designate_backend_bind9
+dig @10.11.11.11 google.com
+
+#3. Download Fedora-CoreOS image and upload to OpenStack glance image service
+source karno-openrc.sh 
+wget -c https://builds.coreos.fedoraproject.org/prod/streams/testing-devel/builds/37.20230413.20.0/x86_64/fedora-coreos-37.20230413.20.0-openstack.x86_64.qcow2.xz
+xz -d fedora-coreos-37.20230413.20.0-openstack.x86_64.qcow2.xz
+openstack image create --disk-format qcow2 --file fedora-coreos-37.20230413.20.0-openstack.x86_64.qcow2 --property os_distro='fedora-coreos' --progress fedora-coreos-37.20230413.20.0-openstack.x86_64
+openstack image list
+
+#4. Create a cluster template for a Kubernetes
+openstack coe cluster template create template-kubernetes-v1.23.16-rancher2 --coe kubernetes --image fedora-coreos-37.20230413.20.0-openstack.x86_64 --external-network net-provider --master-flavor flavor-4-4-40 --flavor flavor-4-4-40 --network-driver calico --dns-nameserver 10.11.11.11 --labels kube_tag=v1.23.16-rancher2,calico_tag=v3.21.6,coredns_tag=1.6.9
+openstack coe cluster template list
+
+#5. Create a cluster
+openstack coe cluster create kubernetes-v1.23.16-rancher2 --cluster-template template-kubernetes-v1.23.16-rancher2 --keypair key-0 --master-count 1 --master-flavor flavor-4-4-40 --node-count 2 --flavor flavor-4-4-40
+openstack coe cluster list
+
+#6. Check cluster
+mkdir ~/bin
+wget -c https://dl.k8s.io/release/v1.23.16/bin/linux/amd64/kubectl -O ~/bin/kubectl
+chmod +x ~/bin/kubectl 
+mkdir -p ~/clusters/kubernetes-v1.23.16-rancher2
+rm -rf ~/clusters/kubernetes-v1.23.16-rancher2/config
+$(openstack coe cluster config kubernetes-v1.23.16-rancher2 --dir ~/clusters/kubernetes-v1.23.16-rancher2)
+export KUBECONFIG=~/clusters/kubernetes-v1.23.16-rancher2/config
+kubectl -n kube-system get po
+
+#7. Troubleshooting Loops In Kubernetes Clusters
+# Reference: https://coredns.io/plugins/loop/#troubleshooting-loops-in-kubernetes-clusters
+kubectl -n kube-system edit cm coredns
+
+        #forward . /etc/resolv.conf
+        forward . 8.8.8.8
+
+kubectl -n kube-system get po
+kubectl -n kube-system delete po coredns-xxxxxxxxxx-xxxxx
+kubectl -n kube-system delete po coredns-xxxxxxxxxx-xxxxx
+kubectl -n kube-system get po
