@@ -1,13 +1,13 @@
 #1. Load admin openrc
 source admin-openrc.sh
 
-#2. Create the external network
-openstack network create --share --external --default --provider-network-type flat --provider-physical-network physnet1 net-ext
-openstack network show net-ext
+#2. Create the provider network
+openstack network create --external --default --provider-network-type flat --provider-physical-network physnet1 net-provider
+openstack network show net-provider
 
-#3. Create the subnet for external network
-openstack subnet create --subnet-range 10.14.14.0/24 --no-dhcp --gateway 10.14.14.11 --network net-ext --allocation-pool start=10.14.14.100,end=10.14.14.199 subnet-ext
-openstack subnet show subnet-ext
+#3. Create the subnet for provider network
+openstack subnet create --subnet-range 10.14.14.0/24 --no-dhcp --gateway 10.14.14.11 --network net-provider --allocation-pool start=10.14.14.100,end=10.14.14.199 subnet-provider
+openstack subnet show subnet-provider
 
 #4. Create a flavor
 openstack flavor create --vcpus 2 --ram 2048 --disk 20 flavor-2-2-20
@@ -61,7 +61,7 @@ openstack subnet show subnet-int-0
 
 #10. Create a router
 openstack router create router-0
-openstack router set --external-gateway net-ext router-0
+openstack router set --external-gateway net-provider router-0
 openstack router add subnet router-0 subnet-int-0
 openstack router show router-0
 
@@ -88,7 +88,7 @@ openstack volume list
 openstack console log show instance-0
 
 #15. Create a floating IP and attach it to the instance
-openstack floating ip create net-ext
+openstack floating ip create net-provider
 openstack floating ip list
 openstack server add floating ip instance-0 10.14.14.1XX
 openstack floating ip list

@@ -241,7 +241,11 @@ kolla-ansible -i all-in-one prechecks
 kolla-ansible -i all-in-one deploy
 #Ctrl+A,D
 sudo nmcli con mod dummy-dummy10 +ipv4.addresses "10.10.10.11/24,10.10.10.10/24"
+sudo nmcli con down dummy-dummy10
+sudo nmcli con up dummy-dummy10
 sudo nmcli con mod dummy-dummy11 +ipv4.addresses "10.11.11.11/24,10.11.11.10/24"
+sudo nmcli con down dummy-dummy11
+sudo nmcli con up dummy-dummy11
 screen -r 0
 kolla-ansible -i all-in-one post-deploy
 kolla-ansible -i all-in-one check
@@ -309,3 +313,8 @@ source admin-openrc.sh
 openstack role list
 openstack role add --user admin --project admin load-balancer_admin
 openstack role assignment list --names --user admin
+
+#35. Set DNS nameserver to lb-mgmt-subnet subnet
+source admin-openrc.sh
+openstack subnet set --dns-nameserver 192.168.18.1 lb-mgmt-subnet
+openstack subnet show lb-mgmt-subnet
