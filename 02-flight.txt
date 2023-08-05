@@ -1,7 +1,7 @@
 #1. Download and install Kolla and Kolla Ansible
 sudo yum install -y wget tar vim python3-wheel git
-sudo pip3 install git+https://github.com/openstack/kolla@stable/yoga
-sudo pip3 install git+https://github.com/openstack/kolla-ansible@stable/yoga
+sudo pip3 install git+https://github.com/openstack/kolla@stable/2023.1
+sudo pip3 install git+https://github.com/openstack/kolla-ansible@stable/2023.1
 pip3 list --format=columns
 
 #2. Create the /etc/kolla directory
@@ -35,7 +35,7 @@ docker_namespace: "openstack.kolla"
 network_interface: "dummy11"
 kolla_external_vip_interface: "dummy10"
 api_interface: "dummy11"
-storage_interface: "dummy12"
+swift_storage_interface: "dummy12"
 tunnel_interface: "dummy13"
 #octavia_network_interface: "o-hm0"
 neutron_external_interface: "dummy14"
@@ -203,7 +203,7 @@ sudo usermod -aG docker karno
 
 #21. Prepare for Swift rings generating
 mkdir -p /etc/kolla/config/swift/
-KOLLA_SWIFT_BASE_IMAGE="kolla/centos-source-swift-base:yoga"
+KOLLA_SWIFT_BASE_IMAGE="quay.io/openstack.kolla/swift-base:2023.1-rocky-9"
 NODE=10.12.12.11
 
 #22. Generate Swift object ring
@@ -239,16 +239,7 @@ screen -R 0
 kolla-ansible -i all-in-one bootstrap-servers
 kolla-ansible -i all-in-one prechecks
 kolla-ansible -i all-in-one deploy
-#Ctrl+A,D
-sudo nmcli con mod dummy-dummy10 +ipv4.addresses "10.10.10.11/24,10.10.10.10/24"
-sudo nmcli con down dummy-dummy10
-sudo nmcli con up dummy-dummy10
-sudo nmcli con mod dummy-dummy11 +ipv4.addresses "10.11.11.11/24,10.11.11.10/24"
-sudo nmcli con down dummy-dummy11
-sudo nmcli con up dummy-dummy11
-screen -r 0
 kolla-ansible -i all-in-one post-deploy
-kolla-ansible -i all-in-one check
 #Ctrl+A,D
 
 #26. Activate br-ex interface
@@ -265,7 +256,7 @@ openstack endpoint list
 
 #29. Create Amphora Image
 sudo yum install -y diskimage-builder debootstrap
-git clone https://github.com/openstack/octavia.git -b stable/yoga
+git clone https://github.com/openstack/octavia.git -b stable/2023.1
 screen -r 0
 ./octavia/diskimage-create/diskimage-create.sh
 #Ctrl+A,D
@@ -274,7 +265,7 @@ screen -r 0
 cp /etc/kolla/octavia-openrc.sh octavia-openrc.sh
 grep OS_CACERT /etc/kolla/admin-openrc.sh >> octavia-openrc.sh
 source octavia-openrc.sh
-openstack image create amphora-x64-haproxy --disk-format qcow2 --private --tag amphora --file amphora-x64-haproxy.qcow2
+openstack image create amphora-x64-haproxy --disk-format qcow2 --private --tag amphora --file amphora-x64-haproxy.qcow2 --progress
 openstack image list
 
 #31. Configure Octavia health manager interface and bridge

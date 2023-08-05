@@ -28,14 +28,13 @@ sudo exportfs
 showmount -e 10.12.12.11
 
 #3. Install OpenStack Yoga and EPEL repo configs
-sudo yum install -y centos-release-openstack-yoga epel-release
+sudo yum install -y centos-release-openstack-antelope epel-release
 
 #4. Install Package Installer for Python (PIP)
 sudo yum install -y python39 python3-pip python3-cryptography
-sudo yum remove -y python36
 
 #5. Download and install Ansible
-sudo pip3 install 'ansible>=4,<6'
+sudo pip3 install 'ansible>=6,<8'
 pip3 list --format=columns
 
 #6. Configure Ansible
