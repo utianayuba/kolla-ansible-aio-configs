@@ -59,7 +59,7 @@ kubectl -n kube-system get po
 kubectl -n kube-system edit cm coredns
 
         #forward . /etc/resolv.conf
-        forward . 8.8.8.8
+        forward . 10.11.11.11
 
 kubectl -n kube-system get po
 kubectl -n kube-system delete po coredns-xxxxxxxxxx-xxxxx
