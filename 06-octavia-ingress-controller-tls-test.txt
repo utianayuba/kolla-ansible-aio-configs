@@ -129,7 +129,6 @@ EOF
 kubectl apply -f test-octavia-ingress-tls.yaml
 kubectl get ing -w
 #Ctrl+C
-openstack secret list
 openstack loadbalancer list
 IP=10.14.14.1XX
 echo "$IP web.stratus.ok" | sudo tee -a /etc/hosts
@@ -137,10 +136,10 @@ curl https://web.stratus.ok
 curl https://web.stratus.ok/ping
 
 #8. Delete resources
+#Issue delete OpenStack LB https://github.com/kubernetes/cloud-provider-openstack/issues/1721
 kubectl delete ing test-octavia-ingress-tls
 kubectl get ing
 openstack loadbalancer list
-openstack secret list
 kubectl delete svc webserver
 kubectl get svc
 kubectl delete deployment webserver
@@ -149,10 +148,3 @@ kubectl delete svc default-http-backend
 kubectl get svc
 kubectl delete deployment default-http-backend
 kubectl get deployment
-
-##delete secret only if loadbalancer has been deleted
-#kubectl get ing
-#openstack loadbalancer list
-#openstack secret list
-#kubectl delete secret tls-secret
-#kubectl get secret
