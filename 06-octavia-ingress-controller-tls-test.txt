@@ -149,5 +149,10 @@ kubectl delete svc default-http-backend
 kubectl get svc
 kubectl delete deployment default-http-backend
 kubectl get deployment
-kubectl delete secret tls-secret
-kubectl get secret
+
+##delete secret only if loadbalancer has been deleted
+#kubectl get ing
+#openstack loadbalancer list
+#openstack secret list
+#kubectl delete secret tls-secret
+#kubectl get secret

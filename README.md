@@ -18,3 +18,6 @@ Exec based on the following order:
 1. pre-flight.txt
 2. flight.txt
 3. instance-test.txt
+4. magnum-test.txt
+5. octavia-ingress-controller-test.txt
+6. octavia-ingress-controller-tls-test.txt

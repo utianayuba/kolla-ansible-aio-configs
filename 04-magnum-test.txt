@@ -25,28 +25,22 @@ docker restart designate_backend_bind9
 docker ps | grep designate_backend_bind9
 dig @10.11.11.11 google.com
 
-#3. Set Amphora provider on Octavia Ingress enable script
-# Option to set which Octavia provider to use: https://github.com/kubernetes/cloud-provider-openstack/blob/master/docs/octavia-ingress-controller/using-octavia-ingress-controller.md
-
-wget -c https://raw.githubusercontent.com/utianayuba/kolla-ansible-aio-configs/antelope-rocky/files/enable-ingress-octavia.sh
-for U in `sudo find /var -name enable-ingress-octavia.sh | grep /var/lib/kolla`; do sudo cp -v enable-ingress-octavia.sh $U; done
-
-#4. Download Fedora-CoreOS image and upload to OpenStack glance image service
+#3. Download Fedora-CoreOS image and upload to OpenStack glance image service
 source karno-openrc.sh 
 wget -c https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/37.20230401.3.0/x86_64/fedora-coreos-37.20230401.3.0-openstack.x86_64.qcow2.xz
 xz -d fedora-coreos-37.20230401.3.0-openstack.x86_64.qcow2.xz
 openstack image create --disk-format qcow2 --file fedora-coreos-37.20230401.3.0-openstack.x86_64.qcow2 --property os_distro='fedora-coreos' --progress fedora-coreos-37.20230401.3.0-openstack.x86_64
 openstack image list
 
-#5. Create a cluster template for a Kubernetes
+#4. Create a cluster template for a Kubernetes
 openstack coe cluster template create kubernetes-v1.24.16-rancher1 --coe kubernetes --image fedora-coreos-37.20230401.3.0-openstack.x86_64 --external-network net-provider --network-driver calico --dns-nameserver 10.11.11.11 --master-lb-enabled --labels kube_tag=v1.24.16-rancher1,etcd_tag=v3.4.27,calico_tag=v3.22.5,coredns_tag=1.10.1,container_runtime=containerd,containerd_version=1.5.18,containerd_tarball_url=https://github.com/containerd/containerd/releases/download/v1.5.18/cri-containerd-cni-1.5.18-linux-amd64.tar.gz,containerd_tarball_sha256=b2401673a733ffd252b2bcaac1b9b17a431e1f1652446e5cb40d75dd491c1040,cloud_provider_enabled=true,cloud_provider_tag=v1.24.6,ingress_controller=octavia,octavia_ingress_controller_tag=v1.24.6,cinder_csi_enabled=true,volume_driver=cinder,cinder_csi_plugin_tag=v1.24.6,keystone_auth_enabled=true,k8s_keystone_auth_tag=v1.24.6,auto_healing_enabled=true,auto_healing_controller=magnum-auto-healer,magnum_auto_healer_tag=v1.24.6,auto_scaling_enabled=true,autoscaler_tag=v1.23.0
 openstack coe cluster template list
 
-#6. Create a cluster
+#5. Create a cluster
 openstack coe cluster create kubernetes-0 --cluster-template kubernetes-v1.24.16-rancher1 --keypair key-0 --master-count 1 --master-flavor flavor-4-4-40 --node-count 2 --flavor flavor-4-4-40
 openstack coe cluster list
 
-#7. Check cluster
+#6. Check cluster
 mkdir ~/bin
 wget -c https://dl.k8s.io/release/v1.24.16/bin/linux/amd64/kubectl -O ~/bin/kubectl
 chmod +x ~/bin/kubectl 
@@ -54,4 +48,15 @@ mkdir -p ~/clusters/kubernetes-0
 rm -rf ~/clusters/kubernetes-0/config
 $(openstack coe cluster config kubernetes-0 --dir ~/clusters/kubernetes-0)
 export KUBECONFIG=~/clusters/kubernetes-0/config
+kubectl -n kube-system get po
+
+#7. Set Amphora provider on octavia-ingress-controller configmap
+kubectl -n kube-system edit configmap octavia-ingress-controller-config
+...
+    octavia:
+...
+      provider: amphora
+...
+
+kubectl -n kube-system delete po octavia-ingress-controller-0
 kubectl -n kube-system get po
