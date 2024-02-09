@@ -106,7 +106,6 @@ countryName = ID
 stateOrProvinceName = Jabar
 localityName = Bogor
 organizationalUnitName = Stratus
-commonName = {{ kolla_external_fqdn }}
 .....
 
 
@@ -119,7 +118,6 @@ countryName = ID
 stateOrProvinceName = Jabar
 localityName = Bogor
 organizationalUnitName = Stratus
-commonName = {{ kolla_internal_fqdn }}
 .....
 
 
@@ -132,17 +130,11 @@ countryName = ID
 stateOrProvinceName = Jabar
 localityName = Bogor
 organizationalUnitName = Stratus
-commonName = {{ ansible_dummy11.ipv4.address }}
 .....
 
 
 #13. Generate self-sign certificates
 kolla-ansible -i all-in-one certificates
-
-openssl x509 -req -extfile <(printf "subjectAltName=DNS:osext.stratus.ok") -days 1024 -in /etc/kolla/certificates/private/external/external.csr -CA /etc/kolla/certificates/private/root/root.crt -CAkey /etc/kolla/certificates/private/root/root.key -CAcreateserial -out /etc/kolla/certificates/private/external/external.crt
-openssl x509 -req -extfile <(printf "subjectAltName=DNS:osint.stratus.ok") -days 1024 -in /etc/kolla/certificates/private/internal/internal.csr -CA /etc/kolla/certificates/private/root/root.crt -CAkey /etc/kolla/certificates/private/root/root.key -CAcreateserial -out /etc/kolla/certificates/private/internal/internal.crt
-cat /etc/kolla/certificates/private/external/external.crt /etc/kolla/certificates/private/external/external.key > /etc/kolla/certificates/haproxy.pem
-cat /etc/kolla/certificates/private/internal/internal.crt /etc/kolla/certificates/private/internal/internal.key > /etc/kolla/certificates/haproxy-internal.pem
 
 openssl x509 -in /etc/kolla/certificates/ca/root.crt -text
 openssl x509 -in /etc/kolla/certificates/haproxy.pem -text
